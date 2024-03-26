@@ -44,7 +44,7 @@ setClassUnion("logical_null", c("logical", "NULL"))
 
 `%notin%` <- Negate(`%in%`)
 
-source('../programs/MSDtreatment.R')
+source('programs/MSDtreatment.R')
 Input <- setClass(
   "Input",
 
@@ -177,7 +177,7 @@ setMethod(
     sample <- import_sample(object)
     flow_dict <- data.frame(
       flow = c('E', 'I'),
-      # flow_sample = c('expéd', 'intro+exped', 'intro', 'intro+exped'), 
+      # flow_sample = c('exp?d', 'intro+exped', 'intro', 'intro+exped'), 
       variable = c('deb_expe', 'deb_intro')
     )
     return(sample %>% 
