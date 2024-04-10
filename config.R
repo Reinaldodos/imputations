@@ -2,7 +2,7 @@
 #                                     DATE                                     #
 ################################################################################
 
-date_ref <- as_date('2024-01-01')
+date_ref <- as_date('2024-02-01')
 nb_date_prediction <- 2
 first_publication_date <- as_date('2022-01-01')
 date_prediction <- seq.Date(from = date_ref - months(nb_date_prediction), 
@@ -108,7 +108,7 @@ msd_file <- data.frame(
 intro_imput_file <- data.frame(
   directory = c(input_directory, 
                 "Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI//traitement non-réponse/production_202201/input/"),
-  files = c(sprintf("intro_imput_%s-%s.zip", 
+  files = c(sprintf("intro_imput_%s-%s.csv", 
                     year(date_ref - years(4)), 
                     year(date_ref)), 
             "intro_imput_2011-2022_extract20220222.zip"),
@@ -128,7 +128,7 @@ intro_imput_file <- data.frame(
 exped_imput_file <- data.frame(
   directory = c(input_directory, 
                 "Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI//traitement non-réponse/production_202201/input/"), 
-  files = c(sprintf("exped_imput_%s-%s.zip", 
+  files = c(sprintf("exped_imput_%s-%s.csv", 
                    year(date_ref - years(4)), 
                    year(date_ref)), 
             "exped_imput_2011-2022_extract20220222.zip"),
@@ -193,7 +193,7 @@ exped_ventil_file <- data.frame(
 
 ER_file <- data.frame(
   directory = input_directory, 
-  files = sprintf("ER_exped_%s.zip",
+  files = sprintf("ER_exped_%s.csv",
                   paste0(year(date_ref - years(2)),"-" ,year(date_ref))), 
   encoding = "UTF-8", 
   skiprows = 15, 
@@ -227,7 +227,7 @@ cniv_file <- data.frame(
   files = c("Extraction de la table Nomenc viti 2023_12.csv", 
             "Table Inter viti 2022 avec clients prod INES.xls", 
             "EXPORTATIONS_DEB-DAU_CNIV.xlsx", 
-            sprintf("vin-spiritueux_%s.zip", 
+            sprintf("vin-spiritueux_%s.csv", 
                     c(min(y)-1, max(y)) %>% as.character() %>% paste(collapse = '-'))), 
   directory = c(rep(file.path(freenas_directory, "traitement non-réponse", "data"),3), 
                 input_directory),
