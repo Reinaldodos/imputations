@@ -9,7 +9,7 @@ source('../programs/Input.R')
 source('../programs/NR.R')
 source('../programs/Production.R')
 source('../programs/CNIV.R')
-#source('../historique/Mise à jour historique.R')
+#source('../historique/Mise ? jour historique.R')
 
 gc()
 memory.limit(9e12)
@@ -83,11 +83,11 @@ print(Sys.time()-start)
 #                                  PRODUCTION                                  #
 ################################################################################
 
-source('../programs/launch_production.R')
+source('programs/Production_refactoring.R')
 
-source('../programs/imputations_NATR.R',encoding = 'UTF-8')
-source('../programs/imputations_transport48Kv2.R',encoding = 'UTF-8')
-source('../programs/prgm_C3290.R')
+source('programs/imputations_NATR.R',encoding = 'UTF-8')
+source('orograms/imputations_transport48Kv2.R',encoding = 'UTF-8')
+source('programs/prgm_C3290.R')
 
 
 ################################################################################
