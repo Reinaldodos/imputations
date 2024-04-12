@@ -1,11 +1,9 @@
 
-pacman::p_load(lubridate,tidyverse)
 
 options(scipen = 999)
 
 source('config.R')
 # source('../programs/launch_request.R')
-source('programs/Input.R')
 source('programs/NR.R')
 source('programs/Production.R')
 source('programs/CNIV.R')
