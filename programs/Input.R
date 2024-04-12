@@ -98,6 +98,29 @@ Input <- setClass(
 ### FUNCTIONS ###
 ################################################################################
 
+get_last_ca3 <- function(base_CA3) {
+  list.dirs(path = base_CA3) %>%
+    dplyr::as_tibble() %>%
+    tidyr::extract(
+      col = value,
+      into = "mois_envoi",
+      regex = "mois_envoi=(.*)",
+      convert = TRUE
+    ) %>%
+    dplyr::filter(mois_envoi == max(mois_envoi, na.rm = TRUE)) %>%
+    dplyr::pull(mois_envoi) %>%
+    return()
+}
+
+connect_to_last_ca3 <- function(base_CA3) {
+  derniers_CA3 = get_last_ca3(base_CA3 = base_CA3)
+  
+  base_CA3 %>%
+    arrow::open_dataset() %>%
+    filter(mois_envoi == derniers_CA3) %>%
+    return()
+}
+
 import_input <- function(source_file, file, ...){
   fichier = rio::import(
     file.path(source_file[source_file$files == file,]$directory, file),
@@ -503,8 +526,13 @@ setMethod(
   definition = function(object){
     if (!file.exists(file.path(object@input_directory, "ca3.rds"))){
       delete_data <- import_delete(object = object)
+      
       sample_intro <- get_sample_by_flow(input_object, "I")
-      ca3_data <- import_input(object@ca3, object@ca3$files) %>%
+      
+      ca3_data <- 
+        base_CA3 %>% 
+        connect_to_last_ca3() %>% 
+        collect() %>% 
         mutate(period = make_date(year = as.integer(substr(periode, 1, 4)),
                                   month = as.integer(substr(periode, 5, 6)),
                                   day = 1)) %>%
