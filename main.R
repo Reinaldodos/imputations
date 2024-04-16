@@ -50,7 +50,9 @@ input_object <- Input(
   cniv = cniv_file
 )
 
-sample <- import_sample(input_object)
+sample <- import_sample(input_directory = input_directory, 
+                        sample = sample_file)
+
 sample_intro <- get_sample_by_flow(input_object, "I")
 sample_exped <- get_sample_by_flow(input_object, "E")
 

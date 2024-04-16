@@ -157,35 +157,53 @@ data_treatment <- function(source_file, file, rename_list, total_variable, ...){
 
 
 
-#===============================================================================
-# Import sample and delete files
-#===============================================================================
 
-setGeneric(
-  name = "import_sample",
-  def = function(object){
-    standardGeneric("import_sample")
-  }
-)
-setMethod(
-  f = "import_sample",
-  signature = "Input",
-  definition = function(object){
-    if (!file.exists(file.path(object@input_directory, "echantillon.rds"))){
-      sample <- object@sample$date_beg %>% map_df(
-        .f = ~import_input(object@sample, object@sample[object@sample$date_beg == .x,]$files,colClasses=Classes) %>%
-          mutate(date_beg = .x, 
-                 siren = str_sub(numtva, -9, -1)) %>% distinct(siren,annee,mois,numtva,siret,qualite,deb_intro,deb_expe,type_flux,etranger,centre_stat_rattachement,date_beg)
+# Import sample and delete files ------------------------------------------
+
+import_sample <- function(input_directory, sample) {
+  input_path <- file.path(input_directory,
+                          "echantillon.rds")
+  
+  if (!file.exists(input_path)) {
+    sample <-
+      sample$date_beg %>%
+      map(
+        .f = ~ import_input(sample,
+                            sample[sample$date_beg == .x, ]$files,
+                            colClasses = Classes) %>%
+          mutate(
+            date_beg = .x,
+            siren = str_sub(
+              string = numtva,
+              start = -9,
+              end = -1
+            )
+          ) %>%
+          distinct(
+            siren,
+            annee,
+            mois,
+            numtva,
+            siret,
+            qualite,
+            deb_intro,
+            deb_expe,
+            type_flux,
+            etranger,
+            centre_stat_rattachement,
+            date_beg
+          )
       ) %>%
-        bind_rows()
-      # sample <- import_input(object@sample, object@sample$files)
-      saveRDS(sample, file.path(object@input_directory, "echantillon.rds"))
-    }else{
-     sample <- readRDS(file.path(object@input_directory, "echantillon.rds"))
-    }
-    return(sample)
+      bind_rows()
+    
+    saveRDS(object = sample,
+            file = input_path)
+  } else {
+    sample <- readRDS(file = input_path)
   }
-)
+  
+  return(sample)
+}
 
 setGeneric(
   name = "get_sample_by_flow",
