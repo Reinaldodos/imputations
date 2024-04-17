@@ -229,10 +229,7 @@ setMethod(
   signature = "Input",
   definition = function(object, pattern = "suppressions"){
     if (!file.exists(file.path(object@input_directory, "delete.rds"))){
-      # file_list <- list.files(
-      #   path = object@sample_directory, pattern = pattern
-      # )
-      
+
       delete_data_initial <- readRDS(file.path(object@historical_directory, "delete.rds"))
       delete_data <- readRDS(file.path(last(object@sample$directory),
                                        "removing_list.rds")) %>%
@@ -252,43 +249,6 @@ setMethod(
       saveRDS(delete_data,
               file.path(object@historical_directory, "delete.rds"))
 
-      
-      # delete_data <- file_list %>%
-      #   map_df(~import_input(
-      #     source_file = data.frame(directory = object@sample_directory,
-      #                              files = file_list,
-      #                              encoding = "UTF-8"),
-      #     file = .x
-      #   )) %>%
-      #   bind_rows() %>%
-      #   mutate(
-      #     repreneur = ifelse(test = (nchar(repreneur) < 9),
-      #                        yes = NA,
-      #                        no = str_replace_all(repreneur, pattern = " ", replacement = ""))
-      #   ) %>%
-      #   subset(subset = !is.na(repreneur)) %>%
-      #   group_by(siren, repreneur) %>%
-      #   summarise(count = n()) %>%
-      #   ungroup() %>%
-      #   select(siren, repreneur)
-      # scission <- delete_data[nchar(delete_data$repreneur) > 13,]
-      # delete_data <- bind_rows(
-      #   delete_data[nchar(delete_data$repreneur) <= 13,],
-      #   scission$siren %>%
-      #     unique() %>%
-      #     map_df(~split_table(scission, ., "+")) %>%
-      #     bind_rows()
-      # ) %>%
-      #   rowwise() %>%
-      #   mutate(siren_repreneur = str_sub(repreneur, start = -9, end = -1)) %>%
-      #   ungroup() %>%
-      #   group_by(siren, siren_repreneur) %>%
-      #   summarise(count = n()) %>%
-      #   ungroup() %>%
-      #   group_by(siren) %>%
-      #   mutate(ratio = 1/n()) %>%
-      #   ungroup() %>%
-      #   select(-count)
       saveRDS(delete_data, file.path(object@input_directory, "delete.rds"))
     }else{
       delete_data <- readRDS(file.path(object@input_directory, "delete.rds"))
