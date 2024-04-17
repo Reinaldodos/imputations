@@ -1,4 +1,4 @@
-# au cas où il faut relancer les programmes cniv a posteriori
+# au cas o? il faut relancer les programmes cniv a posteriori
 intro_ventil_rect <- readRDS(paste0(input_object@output_directory,"/intro_ventil_rect.rds"))
 exped_ventil_rect <- readRDS(paste0(input_object@output_directory,"/exped_ventil_rect.rds"))
 
@@ -6,7 +6,7 @@ exped_ventil_rect <- readRDS(paste0(input_object@output_directory,"/exped_ventil
 NR_list <- get_NR_list_from_result(result_intro = intro_ventil_rect, 
                                    result_exped = exped_ventil_rect)
 
-confederation_data <- import_confederation_table(input_object)
+confederation_data <- import_confederation_table(cniv = input_object@cniv)
 
 cniv_data <- data_treatment(source_file = cniv_file, 
                             file = cniv_file[cniv_file$type == "input",]$files, 

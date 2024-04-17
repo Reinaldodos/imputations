@@ -670,35 +670,23 @@ setMethod(
 # Import CNIV tables
 #===============================================================================
 
-setGeneric(
-  name = "import_confederation_table",
-  def = function(object){
-    standardGeneric("import_confederation_table")
-  }
-)
-setMethod(
-  f = "import_confederation_table",
-  signature = "Input",
-  definition = function(object){
-    confederation_data <- read.csv2(
-      file.path(object@cniv[object@cniv$type == "confederation_to_ngp",]$directory,
-                object@cniv[object@cniv$type == "confederation_to_ngp",]$files),
+import_confederation_table = function(cniv) {
+  cniv %>%
+    filter(type == "confederation_to_ngp") %>%
+    mutate(path = file.path(directory, files)) %>%
+    pull(path) %>%
+    read.csv2(
       colClasses = "character",
       col.names = c("id_technique", "code_orga", "nc8", "ngp", "appellelation"),
       na.strings = c("", " ")
     ) %>%
-      as_tibble() %>%
-      subset(subset = (nchar(nc8) == 8)) %>%
-      rowwise() %>%
-      mutate(ngp = ifelse(test = !is.na(ngp),
-                          yes = paste(nc8, ngp, sep = ""),
-                          no = NA)) %>%
-      ungroup() %>%
-      group_by(nc8, ngp) %>%
-      summarise(code_orga = unique(code_orga))
-    return(confederation_data)
-  }
-)
+    as_tibble() %>%
+    filter(nchar(nc8) == 8) %>%
+    mutate(ngp = case_when(!is.na(ngp) ~ paste(nc8, ngp, sep = ""))) %>%
+    distinct(nc8, ngp, code_orga) %>%
+    return()
+}
+
 
 get_cell_value_by_bg_color <- function(cell, exclu_color){
   color <- xlsx::getCellStyle(cell)$getFillForegroundColorColor()$getHexString()

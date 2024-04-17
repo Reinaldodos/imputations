@@ -1,11 +1,11 @@
-# au cas où il faut relancer les programmes cniv a posteriori
+# au cas o? il faut relancer les programmes cniv a posteriori
 # intro_ventil_rect <- readRDS(paste0(input_object@output_directory,"/intro_ventil_rect.rds"))
 # exped_ventil_rect <- readRDS(paste0(input_object@output_directory,"/exped_ventil_rect.rds"))
 
 NR_list <- get_NR_list_from_result(result_intro = intro_ventil_rect, 
                                    result_exped = exped_ventil_rect)
 
-confederation_data <- import_confederation_table(input_object)
+confederation_data <- import_confederation_table(cniv = input_object@cniv)
 
 cniv_data <- data_treatment(source_file = cniv_file, 
                             file = cniv_file[cniv_file$type == "input",]$files, 
@@ -26,7 +26,7 @@ cniv_data <- data_treatment(source_file = cniv_file,
 #recul
 cniv <- CNIV(data = cniv_data[(cniv_data$imex %in% c(3,4)),])
 estimation_ngp <- response_median_predict(
-  object = cniv, prediction_period = date_publication[date_publication <= date_ref], # inégalité non stricte si zéro mois de recul
+  object = cniv, prediction_period = date_publication[date_publication <= date_ref], # inï¿½galitï¿½ non stricte si zï¿½ro mois de recul
   NR_list = NR_list, 
   product_var = "ngp", 
   product_list = "all", f = "all"
@@ -53,7 +53,7 @@ write.csv2(estimation_ngp,
 #recul
 compute_coverage(
   response_data = cniv_data, estimation = estimation_ngp, 
-  NR_list = NR_list, output_dates = date_publication[date_publication <= date_ref], # inégalité non stricte si zéro mois de recul
+  NR_list = NR_list, output_dates = date_publication[date_publication <= date_ref], # inï¿½galitï¿½ non stricte si zï¿½ro mois de recul
   f = "E", 
   filename = file.path(output_directory, "wine_spirit","EXPORTATIONS_DEB-DAU_CNIV.xlsx")
 )
