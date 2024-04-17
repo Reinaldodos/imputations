@@ -210,14 +210,6 @@ get_sample_by_flow = function(sample, flow) {
     return()
 }
 
-split_table <- function(table, value, pattern){
-  return(data.frame(
-    siren = unique(table[table$siren == value,]$siren),
-    repreneur = strsplit(x = table[table$siren == value,]$repreneur,
-                         split = pattern,
-                         fixed = T)[[1]]
-  ))
-}
 setGeneric(
   name = "import_delete",
   def = function(object, pattern = "suppressions"){
