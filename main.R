@@ -61,7 +61,8 @@ sample_exped <-
 
 delete <- import_delete(input_object)
 
-msd <- import_msd(input_object)
+msd <- import_msd(input_directory = input_directory, 
+                  msd = msd_file)
 
 
 ################################################################################
