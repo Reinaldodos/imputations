@@ -112,7 +112,7 @@ connect_to_last_ca3 <- function(base_CA3) {
   
   base_CA3 %>%
     arrow::open_dataset() %>%
-    filter(mois_envoi == derniers_CA3) %>%
+    dplyr::filter(mois_envoi == derniers_CA3) %>%
     return()
 }
 
@@ -764,6 +764,7 @@ get_cell_value_by_bg_color <- function(cell, exclu_color){
     return(NULL)
   }
 }
+
 setGeneric(
   name = "get_cniv_client",
   def = function(object){
