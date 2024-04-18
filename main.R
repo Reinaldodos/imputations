@@ -5,10 +5,9 @@ options(scipen = 999)
 
 source('config.R')
 # source('../programs/launch_request.R')
-source('../programs/Input.R')
-source('../programs/NR.R')
-source('../programs/Production.R')
-source('../programs/CNIV.R')
+source('programs/Input.R')
+source('programs/NR.R')
+source('programs/CNIV.R')
 #source('../historique/Mise ? jour historique.R')
 
 gc()
@@ -70,20 +69,20 @@ msd <- import_msd(input_object)
 ## Introduction
 ##==============================================================================
 start=Sys.time()
-source('../programs/launch_introduction.R')
+source('programs/launch_introduction.R')
 print(Sys.time()-start)
 
 ##==============================================================================
 ## Expedition
 ##==============================================================================
 start=Sys.time()
-source('../programs/launch_expedition.R')
+source('programs/launch_expedition.R')
 print(Sys.time()-start)
 ################################################################################
 #                                  PRODUCTION                                  #
 ################################################################################
 
-source('programs/Production_refactoring.R')
+source('programs/Production.R')
 
 source('programs/imputations_NATR.R',encoding = 'UTF-8')
 source('orograms/imputations_transport48Kv2.R',encoding = 'UTF-8')
@@ -93,11 +92,11 @@ source('programs/prgm_C3290.R')
 ################################################################################
 #                                  CONTROLE                                    #
 ################################################################################
-source('../programs/Controles_imput_PC_yb.R')
+source('programs/Controles_imput_PC_yb.R')
 
 
 ################################################################################
 #                                       CNIV                                   #
 ################################################################################
 
-source('../programs/launch_cniv.R')
+source('programs/launch_cniv.R')
