@@ -1,3 +1,7 @@
+pacman::p_load(tidyverse)
+
+source('programs/Input.R')
+
 ################################################################################
 #                                     DATE                                     #
 ################################################################################
@@ -206,8 +210,15 @@ ER_file <- data.frame(
 ca3_file <- data.frame(files = c("Donnees_mensuelles.csv"),
                        directory = input_directory)
 
+base_CA3 = "~/dsece-imputation-nr/CA3 Parquet/"
+
+testthat::test_that(desc = "La base CA3 est-elle Ã  date?",
+                    code = {
+                      testthat::expect_equal(lubridate::ym(get_last_ca3(base_CA3 = base_CA3)), date_ref)
+                    })
+
 gazelec_file <- data.frame(
-  files = sprintf("DEB_gazélec_%s.xlsx",format(date_ref, "%Y%m")), 
+  files = sprintf("DEB_gazï¿½lec_%s.xlsx",format(date_ref, "%Y%m")), 
   directory = input_directory, 
   skiprows = 3
 )
