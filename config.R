@@ -2,7 +2,7 @@
 #                                     DATE                                     #
 ################################################################################
 
-date_ref <- as_date('2024-02-01')
+date_ref <- as_date('2024-03-01')
 nb_date_prediction <- 2
 first_publication_date <- as_date('2022-01-01')
 date_prediction <- seq.Date(from = date_ref - months(nb_date_prediction), 
@@ -89,9 +89,11 @@ sample_file <- data.frame(
   directory = sample_directory, 
   files = c("2022_FE_1_2022M032EC-s5v18.csv",
             "2023_FE_4_8.5_20240115.csv",
-            "2024_FE_0_1.1_20240219.csv"), 
+            "2024_FE_0_1.3_20240423.csv"), 
   encoding = "UTF-8", 
-  date_beg = date_sample
+  date_beg = date_sample,
+  dec = ",",
+  skiprows = 0
 )
 
 
@@ -115,7 +117,7 @@ intro_imput_file <- data.frame(
   encoding = "UTF-8", 
   skiprows = c(17,
                25), 
-  dec = ",", 
+  dec = ";", 
   start = c(date_ref - years(4), 
             learning_from),
   end = c(date_ref, 
@@ -128,9 +130,9 @@ intro_imput_file <- data.frame(
 exped_imput_file <- data.frame(
   directory = c(input_directory, 
                 "Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI//traitement non-réponse/production_202201/input/"), 
-  files = c(sprintf("exped_imput_%s-%s.csv", 
-                   year(date_ref - years(4)), 
-                   year(date_ref)), 
+  files = c(sprintf("exped_imput_%s-%s.zip", 
+                    year(date_ref - years(4)), 
+                    year(date_ref)), 
             "exped_imput_2011-2022_extract20220222.zip"),
   encoding = "UTF-8", 
   skiprows = c(17,
@@ -143,6 +145,8 @@ exped_imput_file <- data.frame(
   historical = c(F, F), 
   astrineo_input = c(T, T)
 )
+
+
 
 intro_ventil_file <- data.frame(
   directory = input_directory,
@@ -172,11 +176,14 @@ intro_ventil_file <- data.frame(
 #   astrineo_input = T
 # )
 
+
+
+
 exped_ventil_file <- data.frame(
   directory = input_directory, 
   files = c( sprintf("exped_ventil_%s-%s.csv", 
-                  year(date_ref - years(3)), 
-                  year(date_ref- years(2))),
+                     year(date_ref - years(3)), 
+                     year(date_ref- years(2))),
              sprintf("exped_ventil_%s-%s.csv", 
                      year(date_ref - years(1)), 
                      year(date_ref))), 
@@ -190,10 +197,9 @@ exped_ventil_file <- data.frame(
 
 
 
-
 ER_file <- data.frame(
   directory = input_directory, 
-  files = sprintf("ER_exped_%s.csv",
+  files = sprintf("ER_exped_%s.zip",
                   paste0(year(date_ref - years(2)),"-" ,year(date_ref))), 
   encoding = "UTF-8", 
   skiprows = 15, 
@@ -204,7 +210,10 @@ ER_file <- data.frame(
 )
 
 ca3_file <- data.frame(files = c("Donnees_mensuelles.csv"),
-                       directory = input_directory)
+                       directory = input_directory,
+                       dec = ";",
+                       encoding = "UTF-8",
+                       skiprows = 0 )
 
 gazelec_file <- data.frame(
   files = sprintf("DEB_gazélec_%s.xlsx",format(date_ref, "%Y%m")), 
@@ -235,5 +244,7 @@ cniv_file <- data.frame(
   skiprows = c(0,1,0,15), 
   start = make_date(year = min(y) - 1, month = 1, day = 1), 
   end = date_ref, 
+  dec = ",",
+  encoding = "UTF-8",
   astrineo_input = c(F, F, F, T)
 )
