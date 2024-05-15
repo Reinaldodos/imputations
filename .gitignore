@@ -8,3 +8,6 @@ historique/*
 cniv/*
 input/*
 output_PC/*
+output_C/*
+ETL/*
+*.rds
