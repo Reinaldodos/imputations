@@ -111,6 +111,8 @@ msd_file <- data.frame(
 ) %>% 
   mutate(skiprows = ifelse(debadmin, 4, 0))
 
+test_MSD_fichiers_presents(msd_file = msd_file)
+
 intro_imput_file <- data.frame(
   directory = c(input_directory, 
                 "Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI//traitement non-réponse/production_202201/input/"),
