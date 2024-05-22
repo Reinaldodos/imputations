@@ -21,7 +21,8 @@ memory.limit(9e12)
 
 if(!dir.exists(ETL_directory)) {
   source(file = "Refactoring/import et prep.R", 
-         encoding = "UTF-8")
+         encoding = "UTF-8",
+         echo = TRUE)
 }
 
 # IMPORT INPUT FILES ------------------------------------------------------
