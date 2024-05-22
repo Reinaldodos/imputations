@@ -210,10 +210,7 @@ ca3_file <- data.frame(files = c("Donnees_mensuelles.csv"),
 
 base_CA3 = "~/dsece-imputation-nr/CA3 Parquet/"
 
-testthat::test_that(desc = "La base CA3 est-elle à date?",
-                    code = {
-                      testthat::expect_equal(lubridate::ym(get_last_ca3(base_CA3 = base_CA3)), date_ref)
-                    })
+test_last_CA3(base_CA3 = base_CA3, date_ref = date_ref)
 
 gazelec_file <- data.frame(
   files = sprintf("DEB_gazélec_%s.xlsx",format(date_ref, "%Y%m")), 
