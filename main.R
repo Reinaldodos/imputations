@@ -72,8 +72,10 @@ delete <-
             "delete_data.arrow") %>% 
   arrow::read_feather()
 
-msd <- import_msd(input_directory = input_directory,
-                  msd = msd_file)
+msd <- 
+  file.path(ETL_directory,
+            "MSD.arrow") %>% 
+  arrow::read_feather()
 
 
 # LAUNCH SIMULATIONS ------------------------------------------------------

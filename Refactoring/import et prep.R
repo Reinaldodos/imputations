@@ -17,4 +17,11 @@ ETL_delete_data(
 )
 
 
+# ETL MSD -----------------------------------------------------------------
+msd_file %>% 
+  filter(file.path(directory, files) %>% 
+           file.exists()) %>% 
+  import_msd() %>% 
+  arrow::write_feather(sink = file.path(ETL_directory,
+                                        "MSD.arrow"))
 

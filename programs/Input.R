@@ -249,24 +249,6 @@ setMethod(
   }
 )
 
-# Import MSD --------------------------------------------------------------
-
-import_msd = function(input_directory, msd) {
-  msd_path = file.path(input_directory, "MSD.rds")
-  
-  if (!file.exists(msd_path)) {
-    msd_data <- 
-      MSD_treatment(MSD_file = msd) %>%
-      mutate(flux = str_sub(Flux, start = 1, end = 1)) %>%
-      as_tibble()
-    saveRDS(msd_data, msd_path)
-  } else{
-    msd_data <- readRDS(msd_path)
-  }
-  return(msd_data)
-}
-
-
 
 #===============================================================================
 # Import endogenous
