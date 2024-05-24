@@ -50,8 +50,8 @@ setMethod(f = "response_median_predict",
               prediction <- subset(filtered_data, 
                                    subset = ((flow %in% f) & 
                                                ((year(period) == year(as_date(date)) - 1) |
-                                                ((year(period) == year(as_date(date))) &
-                                                   (period < as_date(date)))))) %>%
+                                                  ((year(period) == year(as_date(date))) &
+                                                     (period < as_date(date)))))) %>%
                 group_by_(.dots = c(product_var, "siren", "flow")) %>%
                 summarise(period = as_date(date)) %>%
                 full_join(
@@ -302,7 +302,7 @@ build_ending_file <- function(data_file, wb, confederation_table, confederation,
     Border(color="black", position=c("TOP", "BOTTOM"),
            pen=c("BORDER_THICK", "BORDER_THICK"))
   TABLE_DATA_STYLE <- CellStyle(wb) + DataFormat(("###0,00"))
-
+  
   sheets <- openxlsx::getSheetNames(data_file)
   for (sheetname in sheets){
     date <- as_date(strsplit(sheetname, split = " ")[[1]][2])
@@ -346,7 +346,7 @@ build_ending_file <- function(data_file, wb, confederation_table, confederation,
     setCellStyle(cells_imput[[1,2]], cellStyle = TABLE_COLNAMES_STYLE)
     setCellStyle(cells_imput[[1,3]], cellStyle = TABLE_COLNAMES_STYLE)
     addMergedRegion(sheet, startRow = 3, endRow = 4, startColumn = 11, endColumn = 13)
-
+    
     setCellValue(cells_obs[[1,1]], sprintf("%s %s : Montants observes sur le champ de ...",
                                            flow_dict[flow_dict$flow == f,]$flow_lib_EMEBI,
                                            format(as_date(date), "%Y-%m")))
@@ -386,7 +386,7 @@ build_ending_file <- function(data_file, wb, confederation_table, confederation,
     setCellStyle(cells_TC[[1,6]], TABLE_COLNAMES_STYLE)
     addMergedRegion(sheet, startRow = 4, endRow = 4, startColumn = 17, endColumn = 19)
     # print(names(data_table))
-
+    
     addDataFrame(
       data_table %>%
         data.table::setnames(old = c("Vol.(litre) - DAU", "Val.(euros) - DAU", "*R - DAU",
@@ -440,5 +440,5 @@ build_ending_file <- function(data_file, wb, confederation_table, confederation,
     #              + Fill(backgroundColor = "yellow", foregroundColor = "yellow"))
     
   }
-  saveWorkbook(wb, sprintf(filename_format, confederation))
+  xlsx::saveWorkbook(wb, sprintf(filename_format, confederation))
 }
