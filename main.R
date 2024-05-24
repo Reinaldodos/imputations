@@ -2,7 +2,7 @@
 
 options(scipen = 999)
 
-source('config.R')
+source('config.R', encoding = "UTF-8")
 # source('../programs/launch_request.R')
 source('programs/NR.R')
 source('programs/Production.R')
