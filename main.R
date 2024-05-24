@@ -83,9 +83,12 @@ msd <-
             "MSD.arrow") %>% 
   arrow::read_feather()
 
-exogenous_intro <- import_ca3(input_object)
 
-endogenous_intro <- import_endogenous(input_object, "I")
+exogenous_intro <- 
+  file.path(ETL_directory,
+            "exogenous_intro.arrow") %>% 
+  arrow::read_feather()
+
 detail_intro <- import_detail(input_object, "I", "payp %notin% c('XU', 'GB')")
 detail_exped <- import_detail(input_object, "E", "pyod %notin% c('XU', 'GB')")
 

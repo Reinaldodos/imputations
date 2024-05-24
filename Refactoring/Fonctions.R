@@ -143,3 +143,36 @@ import_msd <- function(data) {
     reframe(period = unique(period)) %>% 
     return()
 }
+
+import_ca3 = function(base_CA3, sample_intro, delete_data) {
+  ca3_data <- 
+    base_CA3 %>% 
+    connect_to_last_ca3() %>% 
+    select(SIREN, PERIODE, Medoc_0031) %>% 
+    collect() %>% 
+    janitor::clean_names() 
+  
+  
+  ca3_data %>% 
+    mutate(period = make_date(year = as.integer(substr(periode, 1, 4)),
+                              month = as.integer(substr(periode, 5, 6)),
+                              day = 1)) %>%
+    subset(subset = ((period >= (min(object@date_prediction) - years(5))) &
+                       ((siren %in% sample_intro$siren) |
+                          (siren %in% delete_data$siren)))) %>% 
+    left_join(y = delete_data, 
+              by = 'siren',
+              relationship = "many-to-many")  %>% 
+    mutate(siren_new = ifelse(test = is.na(siren_repreneur),
+                              yes = siren,
+                              no = siren_repreneur),
+           medoc_0031 = ifelse(test = is.na(ratio),
+                               yes = as.numeric(medoc_0031),
+                               no = as.numeric(medoc_0031) * ratio)) %>% 
+    group_by(siren_new, period) %>%
+    summarise(medoc_0031 = sum(medoc_0031),
+              .groups = "drop") %>%
+    rename('siren' = 'siren_new') %>% 
+    return()
+ 
+}
