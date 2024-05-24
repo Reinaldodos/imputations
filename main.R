@@ -83,6 +83,16 @@ msd <-
             "MSD.arrow") %>% 
   arrow::read_feather()
 
+exogenous_intro <- import_ca3(input_object)
+
+endogenous_intro <- import_endogenous(input_object, "I")
+detail_intro <- import_detail(input_object, "I", "payp %notin% c('XU', 'GB')")
+detail_exped <- import_detail(input_object, "E", "pyod %notin% c('XU', 'GB')")
+
+endogenous_intro <- import_endogenous(input_object, "I")
+endogenous_exped <- import_endogenous(input_object, "E")
+
+ER <- import_ER(input_object)
 
 # LAUNCH SIMULATIONS ------------------------------------------------------
 

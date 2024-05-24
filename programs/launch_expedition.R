@@ -1,7 +1,3 @@
-endogenous_exped <- import_endogenous(input_object, "E")
-ER <- import_ER(input_object)
-detail_exped <- import_detail(input_object, "E", "pyod %notin% c('XU', 'GB')")
-
 
 ### Create expedition objects
 
