@@ -1,5 +1,9 @@
 endogenous_intro <- import_endogenous(input_object, "I")
-exogenous_intro <- import_ca3(input_object)
+
+exogenous_intro <- import_ca3(base_CA3 = base_CA3,
+                              sample_intro = sample_intro,
+                              delete_data = delete)
+
 detail_intro <- import_detail(input_object, "I", "payp %notin% c('XU', 'GB')")
 
 

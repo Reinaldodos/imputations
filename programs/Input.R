@@ -142,7 +142,7 @@ data_treatment <- function(source_file, file, rename_list, total_variable, ...){
                        format(source_file[source_file$files == file,]$end, "%Y-%m-%d"))
   if (source_file[source_file$files == file,]$astrineo_input){
     condition <- c(
-      sprintf("%s != 'Total Général'", total_variable),
+      sprintf("%s != 'Total Gï¿½nï¿½ral'", total_variable),
       condition,
       ...
     )
@@ -514,49 +514,37 @@ setMethod(
 # Import CA3
 #===============================================================================
 
-setGeneric(
-  name = "import_ca3",
-  def = function(object){
-    standardGeneric("import_ca3")
-  }
-)
-setMethod(
-  f = "import_ca3",
-  signature = "Input",
-  definition = function(object){
-    if (!file.exists(file.path(object@input_directory, "ca3.rds"))){
-      delete_data <- import_delete(object = object)
-      
-      sample_intro <- get_sample_by_flow(input_object, "I")
-      
-      ca3_data <- 
-        base_CA3 %>% 
-        connect_to_last_ca3() %>% 
-        collect() %>% 
-        mutate(period = make_date(year = as.integer(substr(periode, 1, 4)),
-                                  month = as.integer(substr(periode, 5, 6)),
-                                  day = 1)) %>%
-        subset(subset = ((period >= (min(object@date_prediction) - years(5))) &
-                           ((siren %in% sample_intro$siren) |
-                              (siren %in% delete_data$siren)))) %>%
-        left_join(delete_data, by = 'siren') %>%
-        mutate(siren_new = ifelse(test = is.na(siren_repreneur),
-                                  yes = siren,
-                                  no = siren_repreneur),
-               medoc_0031 = ifelse(test = is.na(ratio),
-                                   yes = as.numeric(medoc_0031),
-                                   no = as.numeric(medoc_0031) * ratio)) %>%
-        group_by(siren_new, period) %>%
-        summarise(medoc_0031 = sum(medoc_0031)) %>%
-        rename('siren' = 'siren_new')
-      saveRDS(ca3_data, file.path(object@input_directory, "ca3.rds"))
-    }else{
-      ca3_data <- readRDS(file.path(object@input_directory, "ca3.rds"))
-    }
-    return(ca3_data)
-  }
-)
-
+import_ca3 <- function(base_CA3, sample_intro, delete_data) {
+  ca3_data <- 
+    base_CA3 %>% 
+    connect_to_last_ca3() %>% 
+    select(SIREN, PERIODE, Medoc_0031) %>% 
+    collect() %>% 
+    janitor::clean_names() 
+  
+  
+  ca3_data %>% 
+    mutate(period = make_date(year = as.integer(substr(periode, 1, 4)),
+                              month = as.integer(substr(periode, 5, 6)),
+                              day = 1)) %>%
+    subset(subset = ((period >= (min(object@date_prediction) - years(5))) &
+                       ((siren %in% sample_intro$siren) |
+                          (siren %in% delete_data$siren)))) %>% 
+    left_join(y = delete_data, 
+              by = 'siren',
+              relationship = "many-to-many")  %>% 
+    mutate(siren_new = ifelse(test = is.na(siren_repreneur),
+                              yes = siren,
+                              no = siren_repreneur),
+           medoc_0031 = ifelse(test = is.na(ratio),
+                               yes = as.numeric(medoc_0031),
+                               no = as.numeric(medoc_0031) * ratio)) %>% 
+    group_by(siren_new, period) %>%
+    summarise(medoc_0031 = sum(medoc_0031),
+              .groups = "drop") %>%
+    rename('siren' = 'siren_new') %>% 
+    return()
+}
 
 #===============================================================================
 # Import ER
@@ -705,7 +693,7 @@ get_pass_table <- function(pass_file, file, pass_names){
   range = readxl::cell_cols(pass_file[pass_file$files == file,]$cols),
   col_names = pass_names) %>%
     as_tibble() %>%
-    subset(subset = (annee != "Année")) %>%
+    subset(subset = (annee != "Ann?e")) %>%
     mutate(year = as.integer(annee),
            nc8 = substr(ngp9, 1, 9))
   return(pass_data)
