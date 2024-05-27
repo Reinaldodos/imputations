@@ -2,7 +2,8 @@ endogenous_intro <- import_endogenous(input_object, "I")
 
 exogenous_intro <- import_ca3(base_CA3 = base_CA3,
                               sample_intro = sample_intro,
-                              delete_data = delete)
+                              delete_data = delete, 
+                              date_prediction = date_prediction)
 
 detail_intro <- import_detail(input_object, "I", "payp %notin% c('XU', 'GB')")
 

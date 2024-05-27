@@ -142,7 +142,7 @@ data_treatment <- function(source_file, file, rename_list, total_variable, ...){
                        format(source_file[source_file$files == file,]$end, "%Y-%m-%d"))
   if (source_file[source_file$files == file,]$astrineo_input){
     condition <- c(
-      sprintf("%s != 'Total G�n�ral'", total_variable),
+      sprintf("%s != 'Total Général'", total_variable),
       condition,
       ...
     )
@@ -514,7 +514,7 @@ setMethod(
 # Import CA3
 #===============================================================================
 
-import_ca3 <- function(base_CA3, sample_intro, delete_data) {
+import_ca3 <- function(base_CA3, sample_intro, delete_data, date_prediction) {
   ca3_data <- 
     base_CA3 %>% 
     connect_to_last_ca3() %>% 
@@ -527,7 +527,7 @@ import_ca3 <- function(base_CA3, sample_intro, delete_data) {
     mutate(period = make_date(year = as.integer(substr(periode, 1, 4)),
                               month = as.integer(substr(periode, 5, 6)),
                               day = 1)) %>%
-    subset(subset = ((period >= (min(object@date_prediction) - years(5))) &
+    subset(subset = ((period >= (min(date_prediction) - years(5))) &
                        ((siren %in% sample_intro$siren) |
                           (siren %in% delete_data$siren)))) %>% 
     left_join(y = delete_data, 
