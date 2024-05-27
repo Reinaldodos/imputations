@@ -9,8 +9,7 @@ purrr::walk(
     'programs/CNIV.R'
   ) ,
   .f = source,
-  encoding = "UTF-8",
-  echo = TRUE
+  encoding = "UTF-8"
 )
 
 gc()
