@@ -85,9 +85,10 @@ msd <-
 
 
 exogenous_intro <- 
-  file.path(ETL_directory,
-            "exogenous_intro.arrow") %>% 
-  arrow::read_feather()
+  import_ca3(base_CA3 = base_CA3,
+             sample_intro = sample_intro,
+             delete_data = delete, 
+             date_prediction = date_prediction)
 
 detail_intro <- import_detail(object = input_object,
                               flow =  "I",

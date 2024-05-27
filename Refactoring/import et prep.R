@@ -24,11 +24,3 @@ msd_file %>%
                                         "MSD.arrow"))
 
 
-# ETL CA3 -----------------------------------------------------------------
-
-import_ca3(base_CA3 = base_CA3,
-           sample_intro = sample_intro,
-           delete_data = delete) %>% 
-  arrow::write_feather(sink = file.path(ETL_directory,
-                                        "exogenous_intro.arrow"))
-

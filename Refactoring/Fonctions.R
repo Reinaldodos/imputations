@@ -144,7 +144,7 @@ import_msd <- function(data) {
     return()
 }
 
-import_ca3 = function(base_CA3, sample_intro, delete_data) {
+import_ca3 <- function(base_CA3, sample_intro, delete_data, date_prediction) {
   ca3_data <- 
     base_CA3 %>% 
     connect_to_last_ca3() %>% 
@@ -157,7 +157,7 @@ import_ca3 = function(base_CA3, sample_intro, delete_data) {
     mutate(period = make_date(year = as.integer(substr(periode, 1, 4)),
                               month = as.integer(substr(periode, 5, 6)),
                               day = 1)) %>%
-    subset(subset = ((period >= (min(object@date_prediction) - years(5))) &
+    subset(subset = ((period >= (min(date_prediction) - years(5))) &
                        ((siren %in% sample_intro$siren) |
                           (siren %in% delete_data$siren)))) %>% 
     left_join(y = delete_data, 
@@ -174,5 +174,4 @@ import_ca3 = function(base_CA3, sample_intro, delete_data) {
               .groups = "drop") %>%
     rename('siren' = 'siren_new') %>% 
     return()
- 
 }
