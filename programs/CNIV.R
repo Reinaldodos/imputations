@@ -91,7 +91,7 @@ compute_coverage <- function(response_data,
                              output_dates,
                              f,
                              filename) {
-  workbook <- createWorkbook()
+  workbook <- xlsx::createWorkbook()
   v <- names(estimation)[1]
   for (date in output_dates) {
     # for (date in date_publication[date_publication != date_ref]){

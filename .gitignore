@@ -9,3 +9,5 @@ cniv/*
 input/*
 output_PC/*
 *.rds
+output.txt
+ETL/*

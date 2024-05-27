@@ -6,7 +6,7 @@ source('programs/Input.R')
 #                                     DATE                                     #
 ################################################################################
 
-date_ref <- as_date('2024-03-01')
+date_ref <- as_date('2024-04-01')
 nb_date_prediction <- 2
 first_publication_date <- as_date('2022-01-01')
 date_prediction <- seq.Date(from = date_ref - months(nb_date_prediction), 
@@ -93,7 +93,7 @@ sample_file <- data.frame(
   directory = sample_directory, 
   files = c("2022_FE_1_2022M032EC-s5v18.csv",
             "2023_FE_4_8.5_20240115.csv",
-            "2024_FE_0_1.3_20240423.csv"), 
+            "2024_FE_0_1.4_20240522.csv"), 
   encoding = "UTF-8", 
   date_beg = date_sample,
   dec = ",",
@@ -119,9 +119,9 @@ intro_imput_file <- data.frame(
                     year(date_ref)), 
             "intro_imput_2011-2022_extract20220222.zip"),
   encoding = "UTF-8", 
-  skiprows = c(17,
+  skiprows = c(18,
                25), 
-  dec = ";", 
+  dec = ",", 
   start = c(date_ref - years(4), 
             learning_from),
   end = c(date_ref, 
@@ -227,7 +227,7 @@ testthat::test_that(desc = "La base CA3 est-elle Ã  date?",
                     })
 
 gazelec_file <- data.frame(
-  files = sprintf("DEB_gazï¿½lec_%s.xlsx",format(date_ref, "%Y%m")), 
+  files = sprintf("DEB_gazélec_%s.xlsx",format(date_ref, "%Y%m")), 
   directory = input_directory, 
   skiprows = 3
 )
