@@ -1,8 +1,54 @@
-library(RPostgreSQL)
-library(doParallel)
+pacman::p_load(tidyverse,dbplyr)
 
-user = "ngle_pp"
-pwd = "TFscCizOdV1jO31OBjCu"
+fichier_config <-
+  file.path("Z:",
+            "DG_STAT_prive",
+            "1_ETUDES et METHODES",
+            "R",
+            "Connexion base etudes.yml")
+utilisateur <- "Léa"
+
+
+my_bdd <- 
+  divRmethodo::connexion_base_etudes(
+    fichier_config = fichier_config,
+    utilisateur = utilisateur
+  )
+
+
+
+
+# lecture lazy
+data <- tbl(my_bdd, in_schema("sc_astrineo", "florea"))
+
+echantillon = sample %>% filter(date_beg=="2024-01-01")
+delete = delete %>% filter(!(is.na(siren_repreneur)))
+
+cible = echantillon %>% distinct(siren) %>% 
+  bind_rows(delete %>% distinct(siren)) %>% 
+  bind_rows(delete %>% distinct(siren_repreneur))
+
+
+# cible = echantillon %>% distinct(siren) %>% 
+#   left_join(delete,by="siren") %>% 
+#   mutate(siren_new = ifelse(test = is.na(siren_repreneur),
+#                           yes = siren,
+#                           no = siren_repreneur)
+
+
+
+data_echantillon = data %>%
+  inner_join(cible, by=c("sire"="siren"), copy = T)
+
+
+
+#ajouter la jointure periode, puis filter
+
+groupFiltre_sum= function(...){
+  data_echantillon %>% filter()
+  
+  
+}
 
 unregister_dopar <- function() {
   env <- foreach:::.foreachGlobals
