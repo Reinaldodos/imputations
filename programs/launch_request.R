@@ -26,8 +26,9 @@ delete = delete %>% filter(!(is.na(siren_repreneur)))
 
 cible = echantillon %>% distinct(siren) %>% 
   bind_rows(delete %>% distinct(siren)) %>% 
-  bind_rows(delete %>% distinct(siren_repreneur))
+  bind_rows(delete %>% distinct(siren=siren_repreneur)) %>% unique()
 
+cible_test = echantillon %>% filter(siren=="440117620") %>% distinct(siren)
 
 # cible = echantillon %>% distinct(siren) %>% 
 #   left_join(delete,by="siren") %>% 
@@ -37,18 +38,65 @@ cible = echantillon %>% distinct(siren) %>%
 
 
 
-data_echantillon = data %>%
-  inner_join(cible, by=c("sire"="siren"), copy = T)
+
 
 
 
 #ajouter la jointure periode, puis filter
 
-groupFiltre_sum= function(...){
-  data_echantillon %>% filter()
-  
-  
+groupFiltre_sum= function(data,...,debut,fin){
+  table = data %>% filter(period >= debut, period <= fin ) %>% 
+    group_by(...) %>% summarise(n=sum(vart,na.rm=T)) %>% 
+    collect()
+  return(table)
 }
+
+
+
+FilterPeriod_Sum= function(data,...,debut,fin){
+  
+  liste = seq.Date(from = as.Date(debut),
+                   to = as.Date(fin),
+                   by = "1 month") %>%
+    as.data.frame() %>% setNames("period") %>%
+    mutate(ref = paste0(year(period), sprintf("%02d", month(period))))
+    
+  table = data %>% semi_join(liste, by = "ref") %>%
+    group_by(...) %>% summarise(n = sum(vart, na.rm = T)) %>%
+    collect()
+  
+  return(table)
+}
+
+liste = seq.Date(
+  from = as.Date("2024-01-01"),
+  to = as.Date("2024-02-01"),
+  by = "1 month"
+) %>% as.data.frame() %>% 
+  setNames("period") %>% 
+  mutate(ref = paste0(year(period),sprintf("%02d",month(period))))
+
+
+data_echantillon = data %>%
+  # semi_join(cible_test, by = c("sire" = "siren"), copy = T) %>% 
+  # mutate(ref = paste0(adep,mdep)) %>% 
+  semi_join(liste, by = "ref", copy = T) %>%
+  group_by(sire,adep, mdep) %>%
+  summarise(n = sum(vart, na.rm = T)) %>%
+  show_query()
+  collect()
+
+
+start= as.Date()
+fin="2024-02-01"
+
+import_imput = FilterPeriod_Sum(data = data_echantillon,
+                       adep,
+                       mdep,
+                       debut = start,
+                       fin = end)
+
+
 
 unregister_dopar <- function() {
   env <- foreach:::.foreachGlobals
