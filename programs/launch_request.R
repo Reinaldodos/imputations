@@ -16,10 +16,51 @@ my_bdd <-
   )
 
 
-
-
 # lecture lazy
 data <- tbl(my_bdd, in_schema("sc_astrineo", "florea"))
+
+
+FilterPeriod_Sum= function(data,debut,fin,liste_siren ,...){
+
+  periode <- seq.Date(from = as.Date(debut), to = as.Date(fin), by = 'month') %>%
+  as_tibble() %>%
+  mutate(adep = format(value, "%Y"),
+         mdep = format(value, "%m"))
+  
+  annee = c(unique(periode$adep))
+  mois = c(unique(periode$mdep))
+  
+  table = data %>%
+      filter(sire %in% liste_siren) %>% 
+      filter(adep %in% annee,
+             mdep %in% mois) %>% 
+      group_by(...) %>%
+      summarise(n = sum(vart, na.rm = T)) %>%
+      collect()
+    
+  
+  return(table)
+}
+
+
+test = FilterPeriod_Sum(data = data,
+                       debut = "2021-01-01",
+                       fin="2021-01-01",
+                       liste_siren = NULL,
+                       sire,
+                       adep,
+                       mdep)
+                       
+
+
+dta = data %>%
+  filter (sire %in% cible_liste,
+          adep=="2024",
+          mdep %in% v) %>% 
+  group_by(sire,adep, mdep) %>%
+  summarise(n = sum(vart, na.rm = T)) %>%
+  collect()
+
 
 echantillon = sample %>% filter(date_beg=="2024-01-01")
 delete = delete %>% filter(!(is.na(siren_repreneur)))
@@ -28,7 +69,25 @@ cible = echantillon %>% distinct(siren) %>%
   bind_rows(delete %>% distinct(siren)) %>% 
   bind_rows(delete %>% distinct(siren=siren_repreneur)) %>% unique()
 
-cible_test = echantillon %>% filter(siren=="440117620") %>% distinct(siren)
+cible_liste = c(unique(cible$siren))
+
+
+
+
+
+start_time=Sys.time()
+dta = data %>%
+  filter (sire %in% cible_liste,
+          adep=="2024",
+          mdep %in% v) %>% 
+  group_by(sire,adep, mdep) %>%
+  summarise(n = sum(vart, na.rm = T)) %>%
+  collect()
+print(Sys.time() - start_time)
+
+
+
+cible_test = echantillon %>% filter(siren %in% c("056802218","056806813","056807290","056809957")) %>% distinct(siren)
 
 # cible = echantillon %>% distinct(siren) %>% 
 #   left_join(delete,by="siren") %>% 
@@ -53,40 +112,59 @@ groupFiltre_sum= function(data,...,debut,fin){
 
 
 
-FilterPeriod_Sum= function(data,...,debut,fin){
-  
-  liste = seq.Date(from = as.Date(debut),
-                   to = as.Date(fin),
-                   by = "1 month") %>%
-    as.data.frame() %>% setNames("period") %>%
-    mutate(ref = paste0(year(period), sprintf("%02d", month(period))))
-    
-  table = data %>% semi_join(liste, by = "ref") %>%
-    group_by(...) %>% summarise(n = sum(vart, na.rm = T)) %>%
-    collect()
-  
-  return(table)
-}
 
 liste = seq.Date(
   from = as.Date("2024-01-01"),
-  to = as.Date("2024-02-01"),
+  to = as.Date("2024-12-01"),
   by = "1 month"
 ) %>% as.data.frame() %>% 
   setNames("period") %>% 
-  mutate(ref = paste0(year(period),sprintf("%02d",month(period))))
+  mutate(adep = as.character(year(period)),
+         mdep = sprintf("%02d",month(period)))
+
+liste %>%
+  group_by(adep) %>%
+  summarise(mdep = paste(mdep, collapse = ", ")) %>%
+  ungroup()
 
 
+start_time=Sys.time()
 data_echantillon = data %>%
-  # semi_join(cible_test, by = c("sire" = "siren"), copy = T) %>% 
-  # mutate(ref = paste0(adep,mdep)) %>% 
-  semi_join(liste, by = "ref", copy = T) %>%
+  inner_join(cible_test, by = c("sire" = "siren"), copy = T) %>% 
+  inner_join(liste, by = c("adep","mdep"), copy = T) %>%
   group_by(sire,adep, mdep) %>%
   summarise(n = sum(vart, na.rm = T)) %>%
   show_query()
-  collect()
+print(Sys.time() - start_time)
 
 
+start_time=Sys.time()
+data_echantillon = data %>%
+  inner_join(cible_test, by = c("sire" = "siren"), copy = T) %>% 
+  inner_join(liste, by = c("adep","mdep"), copy = T) %>%
+  group_by(sire,adep, mdep) %>%
+  summarise(n = sum(vart, na.rm = T)) %>%
+  show_query()
+print(Sys.time() - start_time)
+v=c(unique(liste$mdep))
+w=c(unique(cible_test$siren))
+
+start_time=Sys.time()
+  dta = data %>%
+    filter (sire %in% w,
+            adep=="2024",
+            mdep %in% v) %>% 
+    group_by(sire,adep, mdep) %>%
+    summarise(n = sum(vart, na.rm = T)) %>%
+    collect()
+print(Sys.time() - start_time)
+  
+
+data <- dbGetQuery(conn = connexion, statement = sql(request_data[irow,]$command))
+
+
+
+  
 start= as.Date()
 fin="2024-02-01"
 
