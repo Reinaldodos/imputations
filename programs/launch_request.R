@@ -19,39 +19,103 @@ my_bdd <-
 # lecture lazy
 data <- tbl(my_bdd, in_schema("sc_astrineo", "florea"))
 
-
-FilterPeriod_Sum= function(data,debut,fin,liste_siren ,...){
+debut = "2024-01-01"
+fin="2024-01-01"
+FilterPeriod_Sum= function(data,debut,fin,var,...){
 
   periode <- seq.Date(from = as.Date(debut), to = as.Date(fin), by = 'month') %>%
   as_tibble() %>%
   mutate(adep = format(value, "%Y"),
-         mdep = format(value, "%m"))
+         mdep = format(value, "%m")) %>% 
+  as.data.frame()
   
   annee = c(unique(periode$adep))
   mois = c(unique(periode$mdep))
   
-  table = data %>%
-      filter(sire %in% liste_siren) %>% 
-      filter(adep %in% annee,
-             mdep %in% mois) %>% 
-      group_by(...) %>%
-      summarise(n = sum(vart, na.rm = T)) %>%
-      collect()
-    
+  var = sym(var)
+  # filtre = sym(filtre)
   
+  table = data %>%
+      filter(sire == "056802218" ) %>% 
+      # filter({{filtre}}) %>% 
+      filter(adep %in% annee,
+             mdep %in% mois) %>%
+      # semi_join(periode %>% distinct(adep,mdep),by=c("adep","mdep")) %>% 
+      group_by(sire,adep,mdep,imex,...) %>%
+      summarise(
+          across(.cols = {{var}},
+                 .fns = ~ sum(., na.rm = TRUE)
+          ),
+          .groups = "drop") %>% 
+    collect()
+    
+
   return(table)
 }
 
 
-test = FilterPeriod_Sum(data = data,
-                       debut = "2021-01-01",
-                       fin="2021-01-01",
-                       liste_siren = NULL,
+cible_test = echantillon %>% filter(siren %in% c("056802218","056806813","056807290","056809957")) %>% distinct(siren)
+
+ER = FilterPeriod_Sum(data = data,
+                       debut = request$start,
+                       fin=request$end
+                       # var = request$var,
+                       # filtre = request$filtre
+                        )
+                       # # ecrire le filtre
+                       # oblig = '1' & vaco %in% c('1', '3'))
+                      # ecrire les variables de groupement
                        sire,
                        adep,
                        mdep)
                        
 
+ER = FilterPeriod_Sum(data = data,
+                      debut = request$start,
+                      fin=request$end,
+                      var = request$var)
+                      # filtre = request$filtre)
+
+
+request=request_data %>% filter(names=="ER_exped")
+request_data = data.frame(
+  names = c("imput", "ventil", "ER_exped", "vin-spiritueux"),
+  # start = c("2020-04-01", "2021-04-01","2022-01-01","2021-01-01"),
+  start = c("2024-03-01", "2024-03-01","2024-03-01","2024-03-01"),
+  end = date_ref,
+  filtre= c("oblig == '1' , vaco %in% c('1', '3')",
+    "oblig == '1',vaco %in% c('1', '3')",
+    "oblig == '4',regdem == '21'",
+    "str_sub(nc8,1,4) %in% c('2204','2208'), vaco %in% c('1', '3')"),
+  var = c("vart","vart","c('vart','vfte')","vart,usup")
+)
+
+
+
+
+dict <- data.frame(
+  type = c("intro_imput", "intro_ventil", "exped_imput", "exped_ventil", "ER_exped", "vin-spiritueux"), 
+  var = c("sire, adep, mdep", 
+          "sire, adep, mdep, a129, nc8, payp, pyod, dept, regdem, temo, natr, conf", 
+          "sire, adep, mdep, regdem", 
+          "sire, adep, mdep, a129, nc8, payp, pyod, dept, regdem, temo, natr, conf", 
+          "sire, adep, mdep, regdem", 
+          "sire, adep, mdep, ngp, nc8, imex, case when imex in ('1', '3') then 'I' else 'E' end flux"),
+  var_group_by = c("sire, adep, mdep", 
+                   "sire, adep, mdep, a129, nc8, payp, pyod, dept, regdem, temo, natr, conf", 
+                   "sire, adep, mdep, regdem", 
+                   "sire, adep, mdep, a129, nc8, payp, pyod, dept, regdem, temo, natr, conf", 
+                   "sire, adep, mdep, regdem", 
+                   "sire, adep, mdep, ngp, nc8, imex, case when imex in ('1', '3') then 'I' else 'E' end"),
+  agg_var = c("vart", "vart", "vart", "vart", "vart, vfte", 
+              "vart, usup") 
+) %>%
+  mutate(condition = case_when(
+    (grepl(pattern = "intro", x = type)) ~ "(imex = '3') and (oblig = '1') and (vaco in ('1', '3'))", 
+    (grepl(pattern = "imput", x = type) | grepl(pattern = "ventil", x = type)) ~ "(imex = '4') and (oblig = '1') and (vaco in ('1', '3'))", 
+    (grepl(pattern = "ER", x = type)) ~ "(oblig = '4') and (regdem = '21')", 
+    TRUE ~ "((nc8 like '2204%') or (nc8 like '2208%')) and (vaco in ('1','3'))"
+    
 
 dta = data %>%
   filter (sire %in% cible_liste,
@@ -176,6 +240,8 @@ import_imput = FilterPeriod_Sum(data = data_echantillon,
 
 
 
+
+
 unregister_dopar <- function() {
   env <- foreach:::.foreachGlobals
   rm(list=ls(name=env), pos=env)
@@ -285,3 +351,37 @@ foreach(irow = 1:nrow(request_data),
 stopCluster(cl)
 print(Sys.time() - start_time)
 unregister_dopar()
+
+
+
+
+
+
+liste_var = c(str_c("sh", 2 * 1:3), "nc8", "natr", "temo", "pyod") 
+liste_val = c("value", "value_MDE", "DELTA", "ratio")
+
+output %>% 
+  group_sum_pivot(var = "sh2", 
+                  val = "DELTA")
+  
+
+BASE = 
+  crossing(liste_val, liste_var) %>% 
+  mutate(
+    sortie = pmap(.l = list(var = liste_var,
+                            val = liste_val),
+                  .f = group_sum_pivot,
+                  data = output, 
+                  .progress = TRUE)
+         )
+
+
+  
+liste_val %>%
+  walk(.f = write_fichier,
+       input = BASE,
+       .progress = TRUE)
+
+
+
+
