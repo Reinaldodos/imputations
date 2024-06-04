@@ -1,4 +1,9 @@
 
+test =
+  import_detail(source_file = intro_ventil_file,
+                delete_data = delete,
+                condition = condition)
+
 import_detail = function(source_file, delete_data, condition) {
   detail_data <- source_file$files %>%
     map(
