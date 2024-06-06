@@ -1,5 +1,5 @@
 options(scipen = 999) 
-pacman::p_load(RPostgreSQL,tidyverse,rio,data.table,openxlsx,janitor,xlsx,dbplyr,arrow,duckdb,fs,tidyverse,DBI,plotly)
+pacman::p_load(RPostgreSQL,tidyverse,rio,data.table,openxlsx,janitor,xlsx,dbplyr,arrow,duckdb,fs,tidyverse,DBI,plotly,divRmethodo)
 memory.limit(9999999999)
 
 `%notin%` <- Negate(`%in%`)
@@ -13,18 +13,12 @@ Base_1jet = Base_historique %>%
   filter(paste0(str_sub(period, 1, 4),
                 str_sub(period, 6, 7)) == mois_ref)
 
-
-
-
-
-
-
 fichier_config = 
   file.path("Z:",
             "DG_STAT_prive",
             "1_ETUDES et METHODES",
             "R",
-            "Connexion base etudes.yml")
+            "Liste credentials.yml")
 
 utilisateur = "Léa"
 
@@ -74,8 +68,8 @@ table_2023 = table_2023 %>%
   distinct(siren, mdep, flux, vart) 
 
 
-table_2023_filter=table_2023 %>% 
-    filter(vart > 0,
+table_2023_filter = table_2023 %>%
+  filter(vart > 0,
          vart < 1000000)
 
 # liste_2023 = Base_1jet02 %>% inner_join(fevrier,by = c("siren", "mdep", "flux")) %>% 
