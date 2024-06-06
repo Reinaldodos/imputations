@@ -11,13 +11,12 @@ Base_historique <- readRDS("Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI/
 Base_1jet = Base_historique %>%
   filter(source == "prechiffre") %>%
   filter(paste0(str_sub(period, 1, 4),
-                str_sub(period, 6, 7)) == mois_ref) 
-  
+                str_sub(period, 6, 7)) == mois_ref)
 
 
 
 
-echantillon = readRDS("Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI/échantillon/échantillon_202401/2024_FE_0_1.4_20240522.rds")
+
 
 
 fichier_config = 
