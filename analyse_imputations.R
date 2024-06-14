@@ -23,7 +23,6 @@ table_imputations = Base_historique %>%
   filter(source == "prechiffre" & moisref <  period + months(3))
 
 
-
 # Extraction des valeurs observées----------------------------------------------
 
 fichier_config = 
@@ -54,6 +53,7 @@ table_donnees = data %>%
   collect()
 
 
+
 table_donnees = table_donnees %>% 
   ungroup() %>%
   mutate(siren = sire,
@@ -64,18 +64,27 @@ table_donnees = table_donnees %>%
 
 saveRDS(table_donnees,"analyses/table_donnees.rds")
 
-
+#-------------------------------------------------------------------------------
+table_donnees = readRDS("analyses/table_donnees.rds")
 # Table des valeurs observées et imputées
 
 
-table = table_donnees %>% 
-  inner_join(table_imputations,by=c("siren","period","flux","regdem")) %>% 
+# table = table_donnees %>% 
+#   inner_join(table_imputations %>% mutate(top=1),by=c("siren","period","flux","regdem")) %>% 
+#   mutate(time = case_when(moisref == period + months(0) ~"first_estimate",
+#                           moisref == period + months(1) ~"second_estimate",
+#                           moisref == period + months(2) ~"third_estimate")) 
+
+table_revert = table_imputations %>% 
+  left_join(table_donnees %>% mutate(top=1),by=c("siren","period","flux","regdem")) %>% 
   mutate(time = case_when(moisref == period + months(0) ~"first_estimate",
                           moisref == period + months(1) ~"second_estimate",
-                          moisref == period + months(2) ~"third_estimate")) 
+                          moisref == period + months(2) ~"third_estimate")) %>% 
+    left_join(TB(table_imputations,period,flux,moisref),by=) %>% rename(champs= n)
 
+table_revert_top = table_revert %>% filter(top==1)
 
-table_filter = table %>% 
+table_filter = table_revert_top %>% 
   filter( prediction > 0,
           prediction < 10000000,
           vart < 10000000,
@@ -86,35 +95,18 @@ table_filter = table %>%
 # Graphique agrégé--------------------------------------------------------------
 
 
-table_agreg = table %>% 
+table_agreg = table_revert %>% 
   mutate(regime = ifelse(regdem %in% c("11","19"),"intro",paste0("exped_",regdem))) %>% 
-  group_by(period, flux,regime,time) %>%
+  group_by(period, flux,regime,time,champs) %>%
   summarise(vart = sum(vart, na.rm = T),
-            prediction = round(sum(prediction, na.rm = T))) 
-
-
-tableaux_frequence = output_nest_coef_sortie$tableau_frequence
-names(tableaux_frequence) = str_c("Coeff = ", output_nest_coef_sortie$valeur_coef)
-
-tableaux_frequence %>% 
-  openxlsx::write.xlsx(file = "output_atelier/tableaux frequence.xlsx")
+            prediction = round(sum(prediction, na.rm = T)),
+            n=n())
 
 
 diff = table_agreg %>% split(.$regime)
 
 
 diff %>% openxlsx::write.xlsx("analyses/results.xlsx")
-
-
-table_graph = table_agreg %>% 
-  pivot_longer(c(vart, prediction),
-               names_to = "type",
-               values_to = "valeur")
-
-ggplot(data = table_agreg, aes(x = period, y = valeur, colour = type)) +
-  geom_line() +
-  geom_point() +
-  facet_grid(regdem ~ .)
 
 
 
@@ -134,23 +126,122 @@ export_graph = function(table,estimate){
     ggplot(aes(x = period, y = valeur, colour = type)) +
     geom_line() +
     geom_point() +
+    # scale_x_continuous(labels=labels) +
     facet_grid(flux ~ .)
+  
+  print(viz)
+  insertPlot(wb, mySheet,  width = 8,
+             height = 5) # Will add the current plot
+  rm(viz)
+}
+
+
+# labels = seq.Date(as.Date("2022-01-01"),as.Date("2024-01-01"),by="month")
+
+liste = c("first_estimate", 
+          "second_estimate", 
+          "third_estimate")
+liste %>% map(.x = .,
+                 .f = export_graph,
+                 table = table_filter)
+openXL(wb)
+
+
+export_graph2 = function(table,estimate){
+  
+  mySheet <- addWorksheet(wb, estimate)
+  
+  viz = table  %>% mutate(estimate = paste0(time,"_",flux)) %>% 
+    filter(estimate==estimate) %>%
+    group_by(period, flux) %>%
+    summarise(vart = sum(vart, na.rm = T),
+              prediction = sum(prediction, na.rm = T)) %>%
+    pivot_longer(c(vart, prediction),
+                 names_to = "type",
+                 values_to = "valeur") %>%
+    ggplot(aes(x = period, y = valeur, colour = type)) +
+    geom_line() +
+    geom_point() 
   
   print(viz)
   insertPlot(wb, mySheet) # Will add the current plot
   rm(viz)
 }
 
+liste = c("first_estimate", 
+          "second_estimate", 
+          "third_estimate")
+liste2= c("intro","exped")
+
+metalist =  tidyr::crossing(liste, liste2) %>% mutate(estimate=paste0(liste,"_",liste2))
+
+pmap(
+  .l = list(estimate = metalist$liste,
+            flux = metalist$liste2),
+  .f = export_graph2,
+  table = table_filter
+)
+
+
+
+
+
+
+# produire les graph
+
+grapher = function(table, estimate,flux){
+  
+  liste_graph = table %>% 
+    filter(time == estimate & flux == flux ) %>%
+    group_by(period, flux) %>%
+    summarise(vart = sum(vart, na.rm = T),
+              prediction = sum(prediction, na.rm = T)) %>%
+    pivot_longer(c(vart, prediction),
+                 names_to = "type",
+                 values_to = "valeur") %>%
+    ggplot(aes(x = period, y = valeur, colour = type)) +
+    geom_line() +
+    geom_point() 
+  # names(liste_graph) = paste0(estimate,"_",flux)
+  return(liste_graph)
+  
+}
+
 
 liste = c("first_estimate", 
           "second_estimate", 
           "third_estimate")
+liste2= c("intro","exped")
 
-liste %>% map(.x = .,
-              .f = export_graph,
-              table = table)
+metalist =  tidyr::crossing(liste, liste2) %>% mutate(estimate=paste0(liste,"_",liste2))
+name_liste = metalist$estimate 
+
+liste_graph=pmap(
+  .l = list(estimate = metalist$liste,
+            flux = metalist$liste2),
+  .f = grapher,
+  table = table_filter
+)
+names(liste_graph)=name_liste
+name_liste = name_liste %>% as.list() %>% flatten()
+names(liste_graph$first_estimate_exped)
+
+wb <- openxlsx::createWorkbook()
+export_graph = function(graph,name){
+    mySheet <- addWorksheet(wb, name)
+    
+    print(graph)
+    insertPlot(wb, mySheet) # Will add the current plot
+
+  }
+
+liste_graph=pmap(
+  .l = list(graph = liste_graph,
+            name = name_liste),
+  .f = export_graph
+)
+
 openXL(wb)
-
 # Graphique détaillés-----------------------------------------------------------
 
 
@@ -201,7 +292,7 @@ wb <- openxlsx::createWorkbook()
 
 export_graph_detail = function(table,estimate){
 mySheet <- addWorksheet(wb, estimate)
-viz = table  %>% filter(time==estimate) %>% 
+viz = table_filter  %>% filter(time==estimate) %>% 
   ggplot(mapping = aes(x = vart, y = prediction,colour = method)) +
   geom_point() + geom_abline() + geom_smooth(method = "lm") 
 print(viz)
@@ -213,7 +304,7 @@ rm(viz)
 liste=c("first_estimate","second_estimate","third_estimate")
 
 liste %>% map(.x = .,
-              .f=export_graph,
+              .f=export_graph_detail,
               table = table)
 openXL(wb)
 
