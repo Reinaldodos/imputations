@@ -6,23 +6,6 @@ memory.limit(9999999999)
 
 source("../mes_fonctions.R")
 
-# Lecture de la base historique des imputations --------------------------------
-Base_historique <- readRDS("Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI/traitement non-réponse/historique/Base_historique.rds")
-
-
-Base_historique = Base_historique %>%
-  mutate(moisref = make_date(
-    year = str_sub(mois_ref, 1, 4),
-    month = str_sub(mois_ref, 5, 6),
-    day = 1
-  ))
-
-
-table_imputations = Base_historique %>%
-  distinct(siren, period, flux, regdem, prediction, method, source, moisref) %>%
-  filter(source == "prechiffre" & moisref <  period + months(3))
-
-
 # Extraction des valeurs observées----------------------------------------------
 
 fichier_config = 
@@ -64,25 +47,53 @@ table_donnees = table_donnees %>%
 
 saveRDS(table_donnees,"analyses/table_donnees.rds")
 
+
 #-------------------------------------------------------------------------------
 table_donnees = readRDS("analyses/table_donnees.rds")
+
+# Lecture de la base historique des imputations --------------------------------
+Base_historique <- readRDS("Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI/traitement non-réponse/historique/Base_historique.rds")
+
+
+Base_historique = Base_historique %>%
+  mutate(moisref = make_date(
+    year = str_sub(mois_ref, 1, 4),
+    month = str_sub(mois_ref, 5, 6),
+    day = 1
+  )) 
+
+
+
+table_imputations = Base_historique %>%
+  distinct(siren, period, flux, regdem,prediction, dist_prediction, method, method_ref, source, moisref) %>%
+  filter(source == "prechiffre" & moisref <  period + months(3))
+
+
 # Table des valeurs observées et imputées
 
 
-# table = table_donnees %>% 
-#   inner_join(table_imputations %>% mutate(top=1),by=c("siren","period","flux","regdem")) %>% 
-#   mutate(time = case_when(moisref == period + months(0) ~"first_estimate",
-#                           moisref == period + months(1) ~"second_estimate",
-#                           moisref == period + months(2) ~"third_estimate")) 
-
 table_revert = table_imputations %>% 
   left_join(table_donnees %>% mutate(top=1),by=c("siren","period","flux","regdem")) %>% 
+  group_by(siren,period,flux,regdem,moisref) %>% 
+  mutate(predit = sum(dist_prediction,na.rm=T)) %>% 
   mutate(time = case_when(moisref == period + months(0) ~"first_estimate",
                           moisref == period + months(1) ~"second_estimate",
                           moisref == period + months(2) ~"third_estimate")) %>% 
-    left_join(TB(table_imputations,period,flux,moisref),by=) %>% rename(champs= n)
+  left_join(TB(table_imputations,period,flux,moisref)) %>% rename(champs= n) %>% 
+  distinct(siren,period,flux,regdem,prediction,predit,method,source,moisref,vart,top,time,champs)
+
+saveRDS(table_revert,"analyses/table_revert.rds")
+
 
 table_revert_top = table_revert %>% filter(top==1)
+
+
+table_lastestimate = table_revert_top %>% 
+  group_by(siren,period,flux,regdem) %>% 
+  mutate(keep = max(moisref,na.rm=T)) %>% 
+  filter(moisref==keep)
+
+
 
 table_filter = table_revert_top %>% 
   filter( prediction > 0,
@@ -90,12 +101,20 @@ table_filter = table_revert_top %>%
           vart < 10000000,
           method %notin% c("reglementation"))
 
+table_filter = table_lastestimate %>% 
+  filter( prediction > 0,
+          prediction < 10000000,
+          vart < 10000000,
+          method %notin% c("reglementation"))
+
+
+
 
 
 # Graphique agrégé--------------------------------------------------------------
 
 
-table_agreg = table_revert %>% 
+table_agreg = table_filter %>% 
   mutate(regime = ifelse(regdem %in% c("11","19"),"intro",paste0("exped_",regdem))) %>% 
   group_by(period, flux,regime,time,champs) %>%
   summarise(vart = sum(vart, na.rm = T),
@@ -107,6 +126,29 @@ diff = table_agreg %>% split(.$regime)
 
 
 diff %>% openxlsx::write.xlsx("analyses/results.xlsx")
+
+
+
+table_agreg %>% filter(flux == "intro") %>%
+  group_by(period, time) %>%
+  summarise(vart = sum(vart, na.rm = T),
+            prediction = sum(prediction, na.rm = T)) %>%
+  pivot_longer(c(vart, prediction),
+               names_to = "type",
+               values_to = "valeur") %>%
+  ggplot(aes(x = period, y = valeur, colour = type)) +
+  geom_line() +
+  geom_point() +
+  
+  scale_y_continuous(
+    breaks = seq(0, 800000000, by = 100000000),
+    labels=function(x) format(x, big.mark = " ", scientific = FALSE))+
+  ylab("valeur")+ 
+  xlab("periode")+
+  #scale_x_continuous(labels=labels) +
+  facet_grid(time ~ .)+
+  ggtitle("Estimations des introductions")
+
 
 
 
@@ -184,8 +226,50 @@ pmap(
 
 
 
+# Graphiques detaillés -----------------------------------------------------------
 
 
+
+wb <- openxlsx::createWorkbook()
+
+export_graph_detail = function(table,estimate,flow){
+  mySheet <- addWorksheet(wb, estimate)
+  viz = table  %>% filter(time==estimate & period > "2022-12-01" & flux==flow) %>% 
+    ggplot(mapping = aes(x = vart, y = predit,colour = method)) +
+    geom_point() + geom_abline() + geom_smooth(method = "lm") +
+    facet_grid(regdem ~ .)
+  print(viz)
+  insertPlot(wb, mySheet) # Will add the current plot
+  rm(viz)
+}
+
+
+liste=c("first_estimate","second_estimate","third_estimate")
+
+liste %>% map(.x = .,
+              .f=export_graph_detail,
+              table = table_filter ,
+              flow = "exped")
+openXL(wb)
+
+
+
+
+# comptages détaillés ----------------------------------------------------------
+
+
+Compter= table_revert %>% filter(period > "2022-12-01",
+                                 prediction > 0,
+                                 prediction < 10000000,
+                                 method %notin% c("reglementation")) %>% 
+  group_by(flux,regdem,time,top) %>% 
+  summarise(n= n(),vart=sum(vart,na.rm=T),
+            predit=sum(predit,na.rm=T))
+  
+Compter_tout= table_revert %>% 
+  group_by(year(period),flux,time,top) %>% 
+  summarise(n= n(),vart=sum(vart,na.rm=T),
+            predit=sum(predit,na.rm=T))
 
 # produire les graph
 
@@ -242,96 +326,8 @@ liste_graph=pmap(
 )
 
 openXL(wb)
-# Graphique détaillés-----------------------------------------------------------
 
 
-#Attention ajouter un round/ regarder les NA aussi
-Base_pred = Base_2jet %>%  
-  select(-adep,-mdep) %>% 
-  mutate(adep = str_sub(period, 1, 4),
-         mdep = str_sub(period, 6, 7),
-         prediction = round(prediction,0)) %>% 
-  filter(adep == "2023" & method %notin% c("reglementation"))
 
-prediction = Base_pred %>% 
-  distinct(siren,adep,mdep, method,period, prediction, flux) %>% 
-  filter(prediction > 0,
-         prediction < 10000000)
-
-Base_dist = Base_pred %>% 
-  group_by(siren, mdep, flux) %>% 
-  mutate(prediction = sum(dist_prediction, na.rm = T)) %>%
-  distinct(siren, mdep, prediction, flux, method) %>% 
-  filter(prediction > 0,
-         prediction < 10000000)
   
-
-
-
-table_2023_filter = table_2023 %>%
-  filter(vart > 0,
-         vart < 10000000)
-
-# liste_2023 = Base_1jet02 %>% inner_join(fevrier,by = c("siren", "mdep", "flux")) %>% 
-#   mutate(ecart=100*((vart-prediction)/vart)) 
-# 
-# sqrt(mean((liste_2023$vart - liste_2023$prediction)^2))
-
-
-list("prediction" = prediction,
-     "valeur" = table_2023_filter) %>%
-  reduce(.f = inner_join, by = c("siren", "mdep", "flux")) %>%
-  ggplot(mapping = aes(x = vart, y = prediction)) +
-  geom_point() + geom_abline() + geom_smooth(method = "lm")
-
-
-
-
-
-wb <- openxlsx::createWorkbook()
-
-export_graph_detail = function(table,estimate){
-mySheet <- addWorksheet(wb, estimate)
-viz = table_filter  %>% filter(time==estimate) %>% 
-  ggplot(mapping = aes(x = vart, y = prediction,colour = method)) +
-  geom_point() + geom_abline() + geom_smooth(method = "lm") 
-print(viz)
-insertPlot(wb, mySheet) # Will add the current plot
-rm(viz)
-}
-
-
-liste=c("first_estimate","second_estimate","third_estimate")
-
-liste %>% map(.x = .,
-              .f=export_graph_detail,
-              table = table)
-openXL(wb)
-
-export_graph_detail( table = table, estimate = "third_estimate" )
-
-voir = table %>% filter(time =="third_estimate")
-
-voir %>% ggplot(mapping = aes(x = vart, y = prediction)) +
-  geom_point() + geom_abline() + geom_smooth(method = "lm") 
-liste_graph %>% 
-openxlsx::write.xlsx(file = "../tableaux frequence.xlsx")
-
-viz = list("prediction" = prediction,
-     "valeur" = table_2023_filter) %>%
-  reduce(.f = inner_join, by = c("siren", "mdep", "flux")) %>%
- ggplot(mapping = aes(x = vart, y = prediction)) +
-  geom_point() + geom_abline() + geom_smooth(method = "lm") +
-  facet_grid(method ~ .)
-viz
-ggplotly(viz)
-
-list("prediction" = Base_dist,
-     "valeur" = table_2023) %>%
-  reduce(.f = inner_join, by = c("siren", "mdep", "flux")) %>%
-  ggplot(mapping = aes(x = prediction, y = vart)) +
-  geom_point() + geom_abline() + geom_smooth(method = "lm") +
-  facet_grid(method ~ .)
-
-
 
