@@ -53,7 +53,7 @@ table_donnees = readRDS("analyses/table_donnees.rds")
 
 # Lecture de la base historique des imputations --------------------------------
 Base_historique <- readRDS("Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI/traitement non-réponse/historique/Base_historique.rds")
-
+echantillon <- readRDS("Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI/échantillon/échantillon_202401/2024_FE_1_1.5_20240612.rds")
 
 Base_historique = Base_historique %>%
   mutate(moisref = make_date(
@@ -66,7 +66,7 @@ Base_historique = Base_historique %>%
 
 table_imputations = Base_historique %>%
   distinct(siren, period, flux, regdem,prediction, dist_prediction, method, method_ref, source, moisref) %>%
-  filter(source == "prechiffre" & moisref <  period + months(3))
+  filter(source == "chiffre" & moisref <  period + months(3))
 
 
 # Table des valeurs observées et imputées
@@ -83,6 +83,20 @@ table_revert = table_imputations %>%
   distinct(siren,period,flux,regdem,prediction,predit,method,source,moisref,vart,top,time,champs)
 
 saveRDS(table_revert,"analyses/table_revert.rds")
+
+
+# Taux de non réponse par période-----------------------------------------------
+
+nb_echant = data.frame(flux= c("exped","intro"),
+         total= c(20770,32250))
+
+TNR = TB(table_revert,period,flux,time) %>% 
+  left_join(nb_echant,by="flux") %>% 
+  mutate(tnr = 100*(n/total)) %>% filter(period<"2024-02-01")
+
+TNR %>% ggplot( aes(x=period, y=tnr, fill=time)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  facet_grid(flux ~ .)
 
 
 table_revert_top = table_revert %>% filter(top==1)
@@ -236,8 +250,7 @@ export_graph_detail = function(table,estimate,flow){
   mySheet <- addWorksheet(wb, estimate)
   viz = table  %>% filter(time==estimate & period > "2022-12-01" & flux==flow) %>% 
     ggplot(mapping = aes(x = vart, y = predit,colour = method)) +
-    geom_point() + geom_abline() + geom_smooth(method = "lm") +
-    facet_grid(regdem ~ .)
+    geom_point() + geom_abline() + geom_smooth(method = "lm")
   print(viz)
   insertPlot(wb, mySheet) # Will add the current plot
   rm(viz)
@@ -270,6 +283,9 @@ Compter_tout= table_revert %>%
   group_by(year(period),flux,time,top) %>% 
   summarise(n= n(),vart=sum(vart,na.rm=T),
             predit=sum(predit,na.rm=T))
+
+
+
 
 # produire les graph
 
