@@ -11,3 +11,4 @@ output_PC/*
 *.rds
 output.txt
 ETL/*
+analyses/*
