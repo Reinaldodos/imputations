@@ -1,13 +1,13 @@
-
 options(scipen = 999)
+
 
 purrr::walk(
   .x = c(
-    'config.R',
-    'programs/NR.R',
-    'programs/Production.R',
-    'programs/CNIV.R'
-  ) ,
+    "config.R",
+    "programs/NR.R",
+    "programs/Production.R",
+    "programs/CNIV.R"
+  ),
   .f = source,
   encoding = "UTF-8"
 )
@@ -18,10 +18,12 @@ memory.limit(9e12)
 
 # ETL INPUT FILES ---------------------------------------------------------
 
-if(!dir.exists(ETL_directory)) {
-  source(file = "Refactoring/import et prep.R", 
-         encoding = "UTF-8",
-         echo = TRUE)
+if (!dir.exists(ETL_directory)) {
+  source(
+    file = "Refactoring/import et prep.R",
+    encoding = "UTF-8",
+    echo = TRUE
+  )
 }
 
 # IMPORT INPUT FILES ------------------------------------------------------
@@ -30,7 +32,6 @@ input_object <- Input(
   date_ref = date_ref,
   date_prediction = date_prediction,
   date_publication = date_publication,
-  
   input_directory = input_directory,
   # astrineo = astrineo_input,
   intro_imput = intro_imput_file,
@@ -39,29 +40,25 @@ input_object <- Input(
   exped_ventil = exped_ventil_file,
   ER = ER_file,
   ca3 = ca3_file,
-  
   sample_directory = sample_directory,
   sample = sample_file,
-  
   msd = msd_file,
-  
   historical_directory = historical_directory,
   use_historical_basis = use_historical_basis,
   save_historical_input = save_historical_input,
-  
   use_gazelec_file = use_gazelec_file,
   add_gazelec_data = add_gazelec_data,
   gazelec = gazelec_file,
-  
   output_directory = output_directory,
   output_freenas_directory = output_freenas_directory,
-  
   pass = pass_file,
   cniv = cniv_file
 )
 
-sample <- file.path(ETL_directory,
-                    "echantillon.arrow") %>%
+sample <- file.path(
+  ETL_directory,
+  "echantillon.arrow"
+) %>%
   arrow::read_feather()
 
 sample_intro <-
@@ -72,30 +69,40 @@ sample_exped <-
   sample %>%
   get_sample_by_flow(flow = "E")
 
-delete <- 
-  file.path(ETL_directory,
-            "delete_data.arrow") %>% 
+delete <-
+  file.path(
+    ETL_directory,
+    "delete_data.arrow"
+  ) %>%
   arrow::read_feather()
 
-msd <- 
-  file.path(ETL_directory,
-            "MSD.arrow") %>% 
+msd <-
+  file.path(
+    ETL_directory,
+    "MSD.arrow"
+  ) %>%
   arrow::read_feather()
 
 
-exogenous_intro <- 
-  import_ca3(base_CA3 = base_CA3,
-             sample_intro = sample_intro,
-             delete_data = delete, 
-             date_prediction = date_prediction)
+exogenous_intro <-
+  import_ca3(
+    base_CA3 = base_CA3,
+    sample_intro = sample_intro,
+    delete_data = delete,
+    date_prediction = date_prediction
+  )
 
-detail_intro <- import_detail(object = input_object,
-                              flow =  "I",
-                              condition = "payp %notin% c('XU', 'GB')")
+detail_intro <- import_detail(
+  object = input_object,
+  flow = "I",
+  condition = "payp %notin% c('XU', 'GB')"
+)
 
-detail_exped <- import_detail(object = input_object,
-                              flow =  "E",
-                              condition =  "pyod %notin% c('XU', 'GB')")
+detail_exped <- import_detail(
+  object = input_object,
+  flow = "E",
+  condition = "pyod %notin% c('XU', 'GB')"
+)
 
 endogenous_intro <- import_endogenous(input_object, "I")
 endogenous_exped <- import_endogenous(input_object, "E")
@@ -106,29 +113,29 @@ ER <- import_ER(input_object)
 
 ## Introduction ------------------------------------------------------
 
-start = Sys.time()
-source('programs/launch_introduction.R')
+start <- Sys.time()
+source("programs/launch_introduction.R")
 print(Sys.time() - start)
 
 ## Expedition ------------------------------------------------------
 
-start = Sys.time()
-source('programs/launch_expedition.R')
+start <- Sys.time()
+source("programs/launch_expedition.R")
 print(Sys.time() - start)
 
 # PRODUCTION ------------------------------------------------------
 
-source('programs/launch_production.R')
+source("programs/launch_production.R")
 
-source('programs/imputations_NATR.R', encoding = 'UTF-8')
-source('programs/imputations_transport48Kv2.R', encoding = 'UTF-8')
-source('programs/prgm_C3290.R')
+source("programs/imputations_NATR.R", encoding = "UTF-8")
+source("programs/imputations_transport48Kv2.R", encoding = "UTF-8")
+source("programs/prgm_C3290.R")
 
 
 # CONTROLE ------------------------------------------------------
 
-source('programs/Controles_imput_PC_yb.R')
+source("programs/Controles_imput_PC_yb.R")
 
 # CNIV ------------------------------------------------------
 
-source('programs/launch_cniv.R')
+source("programs/launch_cniv.R")

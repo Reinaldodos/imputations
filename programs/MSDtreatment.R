@@ -4,7 +4,7 @@ library(stringr)
 
 MSD_treatment <- function(MSD_file) {
   MSD_data <- data.frame()
-  
+
   for (file in MSD_file$files) {
     data <-
       rio::import(
@@ -15,12 +15,12 @@ MSD_treatment <- function(MSD_file) {
         encoding = MSD_file[MSD_file$files == file, ]$encoding
       ) %>%
       as_tibble()
-    
+
     if (MSD_file[MSD_file$files == file, ]$debadmin) {
       colnames(data) <- colnames(data)[2:ncol(data)]
-      data <- data[,-ncol(data)]
+      data <- data[, -ncol(data)]
     }
-    
+
     MSD_data <-
       data %>%
       mutate(
@@ -37,10 +37,12 @@ MSD_treatment <- function(MSD_file) {
       ) %>%
       bind_rows(MSD_data)
   }
-  
+
   MSD_data %>%
     group_by(siren, Flux) %>%
-    summarise(period = unique(period),
-              .groups = "drop") %>%
+    summarise(
+      period = unique(period),
+      .groups = "drop"
+    ) %>%
     return()
 }
