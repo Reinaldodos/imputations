@@ -9,7 +9,7 @@ c('programs/Input.R',
 
 # DATE ------------------------------------------------------
 
-date_ref <- as_date('2024-04-01')
+date_ref <- as_date('2024-03-01')
 nb_date_prediction <- 2
 first_publication_date <- as_date('2022-01-01')
 date_prediction <- seq.Date(from = date_ref - months(nb_date_prediction), 
@@ -187,7 +187,6 @@ exped_ventil_file <- data.frame(
   end = date_ref, 
   astrineo_input = T
 )
-
 
 
 ER_file <- data.frame(
