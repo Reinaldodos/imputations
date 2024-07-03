@@ -59,27 +59,28 @@ freenas_directory <- "Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI/"
 dir.create(output_directory, showWarnings = F)
 
 output_freenas_directory <- file.path(freenas_directory,
-                                      "traitement non-réponse",
+                                      "traitement non-r?ponse",
                                       sprintf("production_%s", 
                                               format(date_ref, "%Y%m")), 
                                       output_directory)
 dir.create(output_freenas_directory, showWarnings = F)
 
 historical_directory <- file.path(freenas_directory,
-                                  "traitement non-réponse",
+                                  "traitement non-r?ponse",
                                   "historique")
 # historical_directory <- '../historique/'
 
 sample_directory <- c(file.path(freenas_directory, 
-                              "échantillon", 
-                              "échantillon_202201", 
+                              "?chantillon", 
+                              "?chantillon_202201", 
                               "datas"), 
                       file.path(freenas_directory, 
-                                "échantillon", 
-                                "échantillon_202301"),
+                                "?chantillon", 
+                                "?chantillon_202301"),
                       file.path(freenas_directory, 
-                                "échantillon", 
-                                "échantillon_202401"))
+                                "?chantillon", 
+                                "?chantillon_202401"))
+
 date_sample <- c(first_publication_date, 
                  as.Date("2023-01-01"),
                  as.Date("2024-01-01"))
@@ -113,7 +114,7 @@ msd_file <- data.frame(
 
 intro_imput_file <- data.frame(
   directory = c(input_directory, 
-                "Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI//traitement non-réponse/production_202201/input/"),
+                "Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI//traitement non-r?ponse/production_202201/input/"),
   files = c(sprintf("intro_imput_%s-%s.csv", 
                     year(date_ref - years(4)), 
                     year(date_ref)), 
@@ -133,7 +134,7 @@ intro_imput_file <- data.frame(
 
 exped_imput_file <- data.frame(
   directory = c(input_directory, 
-                "Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI//traitement non-réponse/production_202201/input/"), 
+                "Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI//traitement non-rÃ©ponse/production_202201/input/"), 
   files = c(sprintf("exped_imput_%s-%s.zip", 
                     year(date_ref - years(4)), 
                     year(date_ref)), 
@@ -227,7 +228,7 @@ testthat::test_that(desc = "La base CA3 est-elle Ã  date?",
                     })
 
 gazelec_file <- data.frame(
-  files = sprintf("DEB_gazélec_%s.xlsx",format(date_ref, "%Y%m")), 
+  files = sprintf("DEB_gaz?lec_%s.xlsx",format(date_ref, "%Y%m")), 
   directory = input_directory, 
   skiprows = 3
 )
@@ -237,7 +238,7 @@ pass_names <- c('annee', 'ngp9', 'cpf6', 'a17', 'a38', 'a129', 'cpfrev1', 'nes11
 pass_file <- data.frame(
   files = c('11- fichier POLYCO2021.xls', '11- POLYCO2022.xls', '11_POLYCO2023_b.xlsx','11_POLYCO2024_b.xlsx'),
   skiprows = 1,
-  directory = c('Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI/traitement non-réponse/data'),
+  directory = c('Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI/traitement non-r?ponse/data'),
   year = c(2021,2022,2023,2024), 
   cols = "A:I"
 )
@@ -249,7 +250,7 @@ cniv_file <- data.frame(
             "EXPORTATIONS_DEB-DAU_CNIV.xlsx", 
             sprintf("vin-spiritueux_%s.csv", 
                     c(min(y)-1, max(y)) %>% as.character() %>% paste(collapse = '-'))), 
-  directory = c(rep(file.path(freenas_directory, "traitement non-réponse", "data"),3), 
+  directory = c(rep(file.path(freenas_directory, "traitement non-r?ponse", "data"),3), 
                 input_directory),
   type = c('confederation_to_ngp', 'client', 'reference', 'input'),
   skiprows = c(0,1,0,15), 

@@ -764,13 +764,13 @@ setMethod(
             )
           )
       }
-      # print(group_siren)
+      
       prediction <- data.frame()
-      # print(group_siren$method_ref)
+      
       for (method_ref in unique(group_siren$method_ref)) {
         siren_list <-
           group_siren[group_siren$method_ref == method_ref, ]$siren
-        # print(siren_list)
+        
         if (method_ref %in% c('taking_exog', 'taking_mean', 'taking_ER')) {
           pred <-
             do.call(get(method_ref),
