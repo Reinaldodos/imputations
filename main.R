@@ -89,8 +89,13 @@ exogenous_intro <-
             "exogenous_intro.arrow") %>% 
   arrow::read_feather()
 
-detail_intro <- import_detail(input_object, "I", "payp %notin% c('XU', 'GB')")
-detail_exped <- import_detail(input_object, "E", "pyod %notin% c('XU', 'GB')")
+detail_intro <- import_detail(object = input_object,
+                              flow =  "I",
+                              condition = "payp %notin% c('XU', 'GB')")
+
+detail_exped <- import_detail(object = input_object,
+                              flow =  "E",
+                              condition =  "pyod %notin% c('XU', 'GB')")
 
 endogenous_intro <- import_endogenous(input_object, "I")
 endogenous_exped <- import_endogenous(input_object, "E")
