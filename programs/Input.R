@@ -48,9 +48,7 @@ source('programs/MSDtreatment.R')
 Input <- setClass(
   "Input",
 
-  #####################
-  ### Define fields ###
-  #####################
+# Define fields ----
 
   slots = c(
     date_ref = "date_null",
@@ -80,9 +78,7 @@ Input <- setClass(
   ),
 
 
-  ######################
-  ### Default values ###
-  ######################
+# Default values ----------------------------------------------------------
 
   prototype = list(
     date_ref = make_date(year = year(Sys.Date() - months(1)),
@@ -94,9 +90,8 @@ Input <- setClass(
 )
 
 
-################################################################################
-### FUNCTIONS ###
-################################################################################
+# FUNCTIONS ---------------------------------------------------------------
+
 
 get_last_ca3 <- function(base_CA3) {
   list.dirs(path = base_CA3) %>%
@@ -205,35 +200,15 @@ import_sample <- function(input_directory, sample) {
   return(sample)
 }
 
-setGeneric(
-  name = "get_sample_by_flow",
-  def = function(object, flow){
-    standardGeneric("get_sample_by_flow")
-  }
-)
-setMethod(
-  f = "get_sample_by_flow",
-  signature = "Input",
-  definition = function(object, flow){
-    sample <- import_sample(object)
-    flow_dict <- data.frame(
-      flow = c('E', 'I'),
-      # flow_sample = c('exp?d', 'intro+exped', 'intro', 'intro+exped'), 
-      variable = c('deb_expe', 'deb_intro')
-    )
-    return(sample %>% 
-             filter(rlang::UQ(rlang::sym(flow_dict[flow_dict$flow == flow,]$variable)) == 1) %>%
-             distinct(siren, date_beg))
-    # return(
-    #   unique(
-    #     sample[
-    #       sample$type_denquete %in%
-    #         flow_dict[flow_dict$flow == flow,]$flow_sample,
-    #     ]$siren
-    #   )
-    # )
-  }
-)
+get_sample_by_flow = function(sample, flow) {
+  flow_dict <- data.frame(flow = c('E', 'I'),
+                          variable = c('deb_expe', 'deb_intro'))
+  
+  sample %>%
+    filter(rlang::UQ(rlang::sym(flow_dict[flow_dict$flow == flow,]$variable)) == 1) %>%
+    distinct(siren, date_beg) %>%
+    return()
+}
 
 split_table <- function(table, value, pattern){
   return(data.frame(
@@ -372,7 +347,13 @@ setMethod(
                           flow_dict[flow_dict$flow == flow,]$variable))
     if (!file.exists(file.path(object@input_directory, filename))){
       delete_data <- import_delete(object = object)
-      sample <- get_sample_by_flow(object, flow)
+      
+      sample <- 
+        import_sample(input_directory = object@input_directory, 
+                      sample = object@sample) %>% 
+        get_sample_by_flow(flow = flow)
+      
+      
       if (object@use_historical_basis){
 
         # Read previous input
@@ -563,6 +544,7 @@ import_ca3 <- function(base_CA3, sample_intro, delete_data, date_prediction) {
     rename('siren' = 'siren_new') %>% 
     return()
 }
+
 
 #===============================================================================
 # Import ER

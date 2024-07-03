@@ -53,9 +53,13 @@ input_object <- Input(
 sample <- import_sample(input_directory = input_directory, 
                         sample = sample_file)
 
-sample_intro <- get_sample_by_flow(input_object, "I")
-sample_exped <- get_sample_by_flow(input_object, "E")
+sample_intro <- 
+  sample %>% 
+  get_sample_by_flow(flow = "I")
 
+sample_exped <-
+  sample %>% 
+  get_sample_by_flow(flow = "E")
 
 delete <- import_delete(input_object)
 

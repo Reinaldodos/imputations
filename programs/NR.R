@@ -853,7 +853,9 @@ setMethod(
         )
       past_NR <- past_month %>%
         map_df(~get_NR_list(
-          sample = get_sample_by_flow(input, object@flow), 
+          sample = get_sample_by_flow(sample = import_sample(input_directory = input@input_directory,
+                                                             sample = input@sample),
+                                      flow = object@flow),
           endogenous = object@endogenous, 
           date = .x
         )) %>% 
