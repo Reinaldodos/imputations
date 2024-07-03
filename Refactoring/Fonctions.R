@@ -40,6 +40,9 @@ import_samples_transform <- function(sample_file, ...) {
     return()
 }
 
+
+# import delete_data ------------------------------------------------------
+
 transform_delete_data <- function(data) {
   data %>%
     mutate(siren_repreneur =
@@ -53,7 +56,6 @@ transform_delete_data <- function(data) {
     select(siren, siren_repreneur, ratio) %>%
     return()
 }
-
 
 diff_historique_delete_data <- function(data, historique) {
   anti_join(x = historique,
@@ -140,3 +142,4 @@ import_msd <- function(data) {
     group_by(siren, Flux) %>%
     reframe(period = unique(period)) %>% 
     return()
+}

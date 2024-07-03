@@ -1,12 +1,17 @@
 
 options(scipen = 999)
 
-c('config.R',
-  'programs/NR.R',
-  'programs/Production.R',
-  'programs/CNIV.R') %>% 
-  walk(.f = source,
-       encoding = "UTF-8")
+purrr::walk(
+  .x = c(
+    'config.R',
+    'programs/NR.R',
+    'programs/Production.R',
+    'programs/CNIV.R'
+  ) ,
+  .f = source,
+  encoding = "UTF-8",
+  echo = TRUE
+)
 
 gc()
 memory.limit(9e12)
