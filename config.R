@@ -1,10 +1,11 @@
 pacman::p_load(tidyverse)
 
-source('programs/Input.R')
+c('programs/Input.R',
+  'Refactoring/Fonctions.R') %>% 
+  walk(.f = source,
+       encoding = "UTF-8")
 
-################################################################################
-#                                     DATE                                     #
-################################################################################
+# DATE ------------------------------------------------------
 
 date_ref <- as_date('2024-04-01')
 nb_date_prediction <- 2
@@ -17,15 +18,12 @@ date_publication <- seq.Date(from = first_publication_date,
                              by = "month")
 learning_from <- date_ref - years(11)
 
+# PARAMETERS ------------------------------------------------------
 
-################################################################################
-#                                    PARAMETERS                                #
-################################################################################
-
-## Number of processes to be used
+## Number of processes to be used ------------------------------------------------------
 nbproc <- 10
 
-## Number of years for linear regression
+## Number of years for linear regression ------------------------------------------------------
 nb_years_regressions <- 5
 
 ## First few years of input data : 
@@ -54,32 +52,33 @@ ventil_filename_format <- sprintf("ventil_%s_ref%s.csv", "%s",
 ################################################################################
 
 input_directory <- "input"
+ETL_directory <- "ETL"
 output_directory <- "output_PC"
-freenas_directory <- "Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI/"
+freenas_directory <- "Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI"
 dir.create(output_directory, showWarnings = F)
 
 output_freenas_directory <- file.path(freenas_directory,
-                                      "traitement non-r?ponse",
+                                      "traitement non-réponse",
                                       sprintf("production_%s", 
                                               format(date_ref, "%Y%m")), 
                                       output_directory)
 dir.create(output_freenas_directory, showWarnings = F)
 
 historical_directory <- file.path(freenas_directory,
-                                  "traitement non-r?ponse",
+                                  "traitement non-réponse",
                                   "historique")
 # historical_directory <- '../historique/'
 
 sample_directory <- c(file.path(freenas_directory, 
-                              "?chantillon", 
-                              "?chantillon_202201", 
+                              "échantillon", 
+                              "échantillon_202201", 
                               "datas"), 
                       file.path(freenas_directory, 
-                                "?chantillon", 
-                                "?chantillon_202301"),
+                                "échantillon", 
+                                "échantillon_202301"),
                       file.path(freenas_directory, 
-                                "?chantillon", 
-                                "?chantillon_202401"))
+                                "échantillon", 
+                                "échantillon_202401"))
 
 date_sample <- c(first_publication_date, 
                  as.Date("2023-01-01"),
@@ -114,7 +113,7 @@ msd_file <- data.frame(
 
 intro_imput_file <- data.frame(
   directory = c(input_directory, 
-                "Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI//traitement non-r?ponse/production_202201/input/"),
+                "Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI//traitement non-réponse/production_202201/input/"),
   files = c(sprintf("intro_imput_%s-%s.csv", 
                     year(date_ref - years(4)), 
                     year(date_ref)), 
@@ -168,21 +167,6 @@ intro_ventil_file <- data.frame(
   astrineo_input = T
 )
 
-# exped_ventil_file <- data.frame(
-#   directory = input_directory,
-#   files = sprintf("exped_ventil_%s-%s.zip",
-#                   year(date_ref - years(2)),
-#                   year(date_ref)),
-#   encoding = "UTF-8",
-#   skiprows = 16,
-#   dec = ",",
-#   start = date_ref - years(2),
-#   end = date_ref,
-#   astrineo_input = T
-# )
-
-
-
 
 exped_ventil_file <- data.frame(
   directory = input_directory, 
@@ -228,7 +212,7 @@ testthat::test_that(desc = "La base CA3 est-elle à date?",
                     })
 
 gazelec_file <- data.frame(
-  files = sprintf("DEB_gaz?lec_%s.xlsx",format(date_ref, "%Y%m")), 
+  files = sprintf("DEB_gazélec_%s.xlsx",format(date_ref, "%Y%m")), 
   directory = input_directory, 
   skiprows = 3
 )
@@ -238,7 +222,7 @@ pass_names <- c('annee', 'ngp9', 'cpf6', 'a17', 'a38', 'a129', 'cpfrev1', 'nes11
 pass_file <- data.frame(
   files = c('11- fichier POLYCO2021.xls', '11- POLYCO2022.xls', '11_POLYCO2023_b.xlsx','11_POLYCO2024_b.xlsx'),
   skiprows = 1,
-  directory = c('Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI/traitement non-r?ponse/data'),
+  directory = c('Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI/traitement non-réponse/data'),
   year = c(2021,2022,2023,2024), 
   cols = "A:I"
 )
@@ -250,7 +234,7 @@ cniv_file <- data.frame(
             "EXPORTATIONS_DEB-DAU_CNIV.xlsx", 
             sprintf("vin-spiritueux_%s.csv", 
                     c(min(y)-1, max(y)) %>% as.character() %>% paste(collapse = '-'))), 
-  directory = c(rep(file.path(freenas_directory, "traitement non-r?ponse", "data"),3), 
+  directory = c(rep(file.path(freenas_directory, "traitement non-réponse", "data"),3), 
                 input_directory),
   type = c('confederation_to_ngp', 'client', 'reference', 'input'),
   skiprows = c(0,1,0,15), 
