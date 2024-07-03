@@ -119,7 +119,6 @@ date_sample <- c(
 ################################################################################
 
 sample_file <- data.frame(
-<<<<<<< HEAD
   directory = sample_directory, 
   files = c("2022_FE_1_2022M032EC-s5v18.csv",
             "2023_FE_4_8.5_20240115.csv",
@@ -128,16 +127,6 @@ sample_file <- data.frame(
   date_beg = date_sample,
   dec = ",",
   skiprows = 0
-=======
-  directory = sample_directory,
-  files = c(
-    "2022_FE_1_2022M032EC-s5v18.csv",
-    "2023_FE_4_8.5_20240115.csv",
-    "2024_FE_1_1.5_20240612.csv"
-  ),
-  encoding = "UTF-8",
-  date_beg = date_sample
->>>>>>> fd893e0 (styling)
 )
 
 
@@ -188,23 +177,6 @@ intro_imput_file <- data.frame(
 
 
 exped_imput_file <- data.frame(
-<<<<<<< HEAD
-  directory = c(input_directory, 
-                "Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI//traitement non-réponse/production_202201/input/"), 
-  files = c(sprintf("exped_imput_%s-%s.zip", 
-                    year(date_ref - years(4)), 
-                    year(date_ref)), 
-            "exped_imput_2011-2022_extract20220222.zip"),
-  encoding = "UTF-8", 
-  skiprows = c(17,
-               25),
-  dec = ",", 
-  start = c(date_ref - years(4),
-            learning_from),
-  end = c(date_ref, 
-          date_ref - years(4) - months(1)), 
-  historical = c(F, F), 
-=======
   directory = c(
     input_directory,
     "Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI//traitement non-réponse/production_202201/input/"
@@ -232,7 +204,6 @@ exped_imput_file <- data.frame(
     date_ref - years(4) - months(1)
   ),
   historical = c(F, F),
->>>>>>> fd893e0 (styling)
   astrineo_input = c(T, T)
 )
 
