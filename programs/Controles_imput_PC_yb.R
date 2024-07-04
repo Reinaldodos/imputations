@@ -6,7 +6,7 @@ library(openxlsx)
 library(lubridate)
 #_______________________________________________________________________________
 
-### Date statistique à mettre à jour ###
+### Date statistique ? mettre ? jour ###
 ########################################
 # mstat <- "2022-08-01"
 mstat <- format(date_ref, "%Y-%m-%d")
@@ -16,11 +16,11 @@ mstat <- format(date_ref, "%Y-%m-%d")
 #################################
 
 ## Type de production
-prod = "Pré-chiffre"
+prod = "Pre-chiffre"
 
 ## Chemins
-# path_ech <- file.path(freenas_directory, "échantillon/échantillon_202301")
-Path_Data <- file.path("../data")
+# path_ech <- file.path(freenas_directory, "?chantillon/?chantillon_202301")
+Path_Data <- file.path("data")
 # Path_Prod <- file.path(paste0("../production_", 
 #                     year(ymd(mstat)), 
 #                     sprintf("%02d", month(ymd(mstat)))))
@@ -65,7 +65,7 @@ filePC_ventil_exped <- list.files(Path_PC, pattern = "ventil_exped") %>%
 
 ### Fonctions ###
 #################
-source(file = "../programs/fonctions_controles_yb.R", encoding = "UTF-8")
+source(file = "programs/fonctions_controles_yb.R", encoding = "UTF-8")
 
 ### Lecture des imputations ###
 ###############################
@@ -76,7 +76,7 @@ imput_intro <- read.csv2(file = file.path(Path_PC, filePC_imp_intro),
                          colClasses = c(siren="character")) %>%  
   select(siren, period, prediction, method, method_ref)
 
-## Expéditions
+## Exp?ditions
 imput_exped21 <- read.csv2(file = file.path(Path_PC, filePC_imp_exped21),
                            sep = ";", 
                            colClasses = c(siren="character")) %>%
@@ -102,7 +102,7 @@ ventil_intro <- read.csv2(file = file.path(Path_PC, filePC_ventil_intro),
 
 
 
-## Expéditions
+## Exp?ditions
 ventil_exped <- read.csv2(file = file.path(Path_PC, filePC_ventil_exped),
                           sep = ";", 
                           colClasses = Classes, 
@@ -145,9 +145,9 @@ list_i_siren10M <- list_seuil_pred(ventil_intro, 10000000) %>% mutate(period=as_
 list_e_siren10M <- list_seuil_pred(ventil_exped, 10000000) %>% mutate(period=as_date(period))
 
 
-### Appariement des Siren imputés avec sirene
+### Appariement des Siren imput?s avec sirene
 fi <- function(x, pos) subset(x, siren %in% unique(list_i_siren10M$siren))
-lsir_i <- read_csv_chunked('../data/StockUniteLegale_utf8.csv', 
+lsir_i <- read_csv_chunked('data/StockUniteLegale_utf8.csv', 
                                callback = DataFrameCallback$new(fi),
                                chunk_size = 1000000)%>% 
   select("siren", "etatAdministratifUniteLegale",
@@ -165,7 +165,7 @@ list_i_siren10M <- list_i_siren10M %>%
 
 
 fe <- function(x, pos) subset(x, siren %in% unique(list_e_siren10M$siren))
-lsir_e <- read_csv_chunked('../data/StockUniteLegale_utf8.csv', 
+lsir_e <- read_csv_chunked('data/StockUniteLegale_utf8.csv', 
                            callback = DataFrameCallback$new(fe),
                            chunk_size = 1000000)%>% 
   select("siren", "etatAdministratifUniteLegale",
@@ -181,17 +181,17 @@ list_e_siren10M <- list_e_siren10M %>%
          etat=etatAdministratifUniteLegale) %>% 
   arrange("period", desc("prediction"))
 
-### Appariement des Siren imputés avec l'échantillon
+### Appariement des Siren imput?s avec l'?chantillon
 # echantillon <- read.csv2(file.path(path_ech, file_ech),
 #                          sep =";",
 #                          encoding = "UTF-8") %>% 
-#   select(siren, centre_stat_rattachement, IDF, lille, dnsce, type.d.enquête) %>% 
+#   select(siren, centre_stat_rattachement, IDF, lille, dnsce, type.d.enqu?te) %>% 
 #   mutate(siren = sprintf("%09d", siren))
 
 # ech_i <- echantillon %>% 
-#   filter(type.d.enquête %in% c("intro", "intro+exped"),
+#   filter(type.d.enqu?te %in% c("intro", "intro+exped"),
 #          siren %in% unique(list_i_siren10M$siren)) %>% 
-#   select(-c(type.d.enquête))
+#   select(-c(type.d.enqu?te))
 intro_sample <- sample_intro %>% arrange(siren, date_beg) %>% distinct(siren,.keep_all = T)
 exped_sample <- sample_exped %>% arrange(siren, date_beg) %>% distinct(siren,.keep_all = T)
 
@@ -201,9 +201,9 @@ list_e_siren10M <- list_e_siren10M %>% left_join(exped_sample,by = c('siren'))
   # left_join(ech_i, by = "siren")
   
 # ech_e <- echantillon %>% 
-#   filter(type.d.enquête %in% c("expéd", "intro+exped"),
+#   filter(type.d.enqu?te %in% c("exp?d", "intro+exped"),
 #          siren %in% unique(list_e_siren10M$siren)) %>% 
-#   select(-c(type.d.enquête))
+#   select(-c(type.d.enqu?te))
 
 # list_e_siren10M <- list_e_siren10M %>% 
 #   mutate(year = year(as.Date(period))) %>%
@@ -256,7 +256,7 @@ if(nrow(list_e_payp)==0 | (nrow(list_e_payp)==1 & is.na(list_e_payp[1,1]))){
   list_e_payp[1,1] <- "Aucune"}
 
 
-### Tables des résultats ###
+### Tables des r?sultats ###
 ############################
 
 ### Comparaison des imputations vs ventilations
@@ -280,7 +280,7 @@ tab_exped <- tot_imp_exped %>% mutate(period=as_date(period)) %>%
   left_join(imp_ventil_exped, by = "period") %>% 
   select(siren_imp, imputation, siren_ventil, tot_imput) %>% 
   rename(imput_ventil = tot_imput) %>% 
-  mutate(flux = "Expéditions",
+  mutate(flux = "ExpÃ©ditions",
          diff_siren = siren_imp - siren_ventil,
          variation = imput_ventil-imputation,
          evolution = variation/imputation) %>% 
@@ -290,14 +290,14 @@ tab_exped <- tot_imp_exped %>% mutate(period=as_date(period)) %>%
 tab_imp <- rbind(tab_intro, tab_exped)
 
 
-### Révisions introductions
+### R?visions introductions
 # histo_rev_intro <- readRDS(file.path(Path_Data ,"histo_rev_intro.Rds"))
 
-### Révisions expéditions
+### R?visions exp?ditions
 # histo_rev_exped <- readRDS(file.path(Path_Data ,"histo_rev_exped.Rds"))
 # revisions_exped <- revis_lastm(ventil_exped, histo_rev_exped)
 
-Base_historique <- readRDS("../historique/Base_historique.Rds")
+Base_historique <- readRDS("Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI/traitement non-rÃ©ponse/historique/Base_historique.rds")
 
 histo_rev <- Base_historique %>% 
   distinct(siren,period,prediction,mois_ref,source,flux) %>% 
@@ -311,11 +311,11 @@ histo_rev <- Base_historique %>%
 revisions_intro <- revis_lastm(ventil_intro, histo_rev  %>% filter(flux=="intro"))
 revisions_exped <- revis_lastm(ventil_exped, histo_rev  %>% filter(flux=="exped"))
 
-#pour mémoire
-saveRDS(histo_rev,"../data/histo_rev.rds")
+#pour m?moire
+saveRDS(histo_rev,"data/histo_rev.rds")
 
 
-### Création du classeur XLSX ###
+### Cr?ation du classeur XLSX ###
 #################################
 wb <- xlsx::createWorkbook(type="xlsx")
 
@@ -352,13 +352,13 @@ cs3 <- CellStyle(wb, dataFormat=dfpc)
 cs4 <- CellStyle(wb, dataFormat=dfsiren) +
   Alignment(horizontal="ALIGN_LEFT", indent = 1)
 
-# onglet "Résultats des contrôles"
+# onglet "R?sultats des contr?les"
 #---------------------------------
-sheet <- xlsx::createSheet(wb, sheetName = "Résultats des contrôles")
+sheet <- xlsx::createSheet(wb, sheetName = "Resultats des controles")
 
 # Ajouter un titre
 xlsx.addTitle(sheet, rowIndex=1, 
-              title=paste0("Contrôles des imputations du ",
+              title=paste0("Controles des imputations du ",
                            prod, " de ",
                            paste0(lubridate::month(ymd(mstat), 
                                         label=TRUE),
@@ -379,7 +379,7 @@ addDataFrame(tab_imp, sheet, startRow=4,
 
 # Ajouter revisions_intro
 xlsx.addTitle(sheet, rowIndex=8, 
-              title="Révisions des imputations des mois précédents pour les introductions : ",
+              title="Revisions des imputations des mois precedents pour les introductions : ",
               titleStyle = SUB_TITLE_STYLE)
 
 addDataFrame(revisions_intro, sheet, startRow=9,
@@ -394,7 +394,7 @@ addDataFrame(revisions_intro, sheet, startRow=9,
 # Ajouter revisions_exped
 xlsx.addTitle(sheet, 
               rowIndex=nrow(revisions_intro) + 11, 
-              title="Révisions des imputations des mois précédents pour les expéditions : ",
+              title="Revisions des imputations des mois precedents pour les expeditions : ",
               titleStyle = SUB_TITLE_STYLE)
 
 addDataFrame(revisions_exped, sheet, 
@@ -500,7 +500,7 @@ sheet <- xlsx::createSheet(wb, sheetName = "Siren 10M - exped")
 
 # Ajouter un titre
 xlsx.addTitle(sheet, rowIndex=1, 
-              title=paste0("Siren des expéditions avec une imputation de 10 millions ou plus"),
+              title=paste0("Siren des expeditions avec une imputation de 10 millions ou plus"),
               titleStyle = TITLE_STYLE)
 
 # Ajouter list_e_siren10M
@@ -516,5 +516,5 @@ setColumnWidth(sheet, colIndex=c(4:10), colWidth=15)
 
 # Enregistrer le classeur 
 #+++++++++++++++++++++++++
-xlsx::saveWorkbook(wb, file.path(Path_PC, paste0("Controles_Pré-chiffre", 
+xlsx::saveWorkbook(wb, file.path(Path_PC, paste0("Controles_Pre-chiffre", 
                                            mstat, ".xlsx")))

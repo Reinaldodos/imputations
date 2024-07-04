@@ -1,102 +1,141 @@
-
-pacman::p_load(lubridate,tidyverse)
-
 options(scipen = 999)
 
-source('config.R')
-# source('../programs/launch_request.R')
-source('programs/Input.R')
-source('programs/NR.R')
-source('programs/CNIV.R')
-#source('../historique/Mise ? jour historique.R')
+
+purrr::walk(
+  .x = c(
+    "config.R",
+    "programs/NR.R",
+    "programs/Production.R",
+    "programs/CNIV.R"
+  ),
+  .f = source,
+  encoding = "UTF-8"
+)
 
 gc()
 memory.limit(9e12)
 
-################################################################################
-#                              IMPORT INPUT FILES                              #
-################################################################################
+
+# ETL INPUT FILES ---------------------------------------------------------
+
+if (!dir.exists(ETL_directory)) {
+  source(
+    file = "Refactoring/import et prep.R",
+    encoding = "UTF-8",
+    echo = TRUE
+  )
+}
+
+# IMPORT INPUT FILES ------------------------------------------------------
 
 input_object <- Input(
   date_ref = date_ref,
   date_prediction = date_prediction,
   date_publication = date_publication,
-  
-  input_directory = input_directory, 
+  input_directory = input_directory,
   # astrineo = astrineo_input,
-  intro_imput = intro_imput_file, 
-  exped_imput = exped_imput_file, 
-  intro_ventil = intro_ventil_file, 
-  exped_ventil = exped_ventil_file, 
+  intro_imput = intro_imput_file,
+  exped_imput = exped_imput_file,
+  intro_ventil = intro_ventil_file,
+  exped_ventil = exped_ventil_file,
   ER = ER_file,
-  ca3 = ca3_file, 
-
+  ca3 = ca3_file,
   sample_directory = sample_directory,
-  sample = sample_file, 
-
-  msd = msd_file, 
-  
+  sample = sample_file,
+  msd = msd_file,
   historical_directory = historical_directory,
   use_historical_basis = use_historical_basis,
   save_historical_input = save_historical_input,
-
   use_gazelec_file = use_gazelec_file,
   add_gazelec_data = add_gazelec_data,
   gazelec = gazelec_file,
-
-  output_directory = output_directory, 
+  output_directory = output_directory,
   output_freenas_directory = output_freenas_directory,
-  
-  pass = pass_file, 
+  pass = pass_file,
   cniv = cniv_file
 )
 
-sample <- import_sample(input_object)
-sample_intro <- get_sample_by_flow(input_object, "I")
-sample_exped <- get_sample_by_flow(input_object, "E")
+sample <- file.path(
+  ETL_directory,
+  "echantillon.arrow"
+) %>%
+  arrow::read_feather()
+
+sample_intro <-
+  sample %>%
+  get_sample_by_flow(flow = "I")
+
+sample_exped <-
+  sample %>%
+  get_sample_by_flow(flow = "E")
+
+delete <-
+  file.path(
+    ETL_directory,
+    "delete_data.arrow"
+  ) %>%
+  arrow::read_feather()
+
+msd <-
+  file.path(
+    ETL_directory,
+    "MSD.arrow"
+  ) %>%
+  arrow::read_feather()
 
 
-delete <- import_delete(input_object)
+exogenous_intro <-
+  import_ca3(
+    base_CA3 = base_CA3,
+    sample_intro = sample_intro,
+    delete_data = delete,
+    date_prediction = date_prediction
+  )
 
-msd <- import_msd(input_object)
+detail_intro <- import_detail(
+  object = input_object,
+  flow = "I",
+  condition = "payp %notin% c('XU', 'GB')"
+)
+
+detail_exped <- import_detail(
+  object = input_object,
+  flow = "E",
+  condition = "pyod %notin% c('XU', 'GB')"
+)
+
+endogenous_intro <- import_endogenous(input_object, "I")
+endogenous_exped <- import_endogenous(input_object, "E")
+
+ER <- import_ER(input_object)
+
+# LAUNCH SIMULATIONS ------------------------------------------------------
+
+## Introduction ------------------------------------------------------
+
+start <- Sys.time()
+source("programs/launch_introduction.R")
+print(Sys.time() - start)
+
+## Expedition ------------------------------------------------------
+
+start <- Sys.time()
+source("programs/launch_expedition.R")
+print(Sys.time() - start)
+
+# PRODUCTION ------------------------------------------------------
+
+source("programs/launch_production.R")
+
+source("programs/imputations_NATR.R", encoding = "UTF-8")
+source("programs/imputations_transport48Kv2.R", encoding = "UTF-8")
+source("programs/prgm_C3290.R")
 
 
-################################################################################
-#                            LAUNCH SIMULATIONS                                #
-################################################################################
+# CONTROLE ------------------------------------------------------
 
-##==============================================================================
-## Introduction
-##==============================================================================
-start=Sys.time()
-source('programs/launch_introduction.R')
-print(Sys.time()-start)
+source("programs/Controles_imput_PC_yb.R")
 
-##==============================================================================
-## Expedition
-##==============================================================================
-start=Sys.time()
-source('programs/launch_expedition.R')
-print(Sys.time()-start)
-################################################################################
-#                                  PRODUCTION                                  #
-################################################################################
+# CNIV ------------------------------------------------------
 
-source('programs/Production.R')
-
-source('programs/imputations_NATR.R',encoding = 'UTF-8')
-source('orograms/imputations_transport48Kv2.R',encoding = 'UTF-8')
-source('programs/prgm_C3290.R')
-
-
-################################################################################
-#                                  CONTROLE                                    #
-################################################################################
-source('programs/Controles_imput_PC_yb.R')
-
-
-################################################################################
-#                                       CNIV                                   #
-################################################################################
-
-source('programs/launch_cniv.R')
+source("programs/launch_cniv.R")
