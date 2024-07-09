@@ -20,25 +20,10 @@ my_bdd <-
 data <- tbl(my_bdd, in_schema("sc_astrineo", "florea"))
 
 debut = as.Date("2023-01-01")
-fin = as.Date("2024-04-01")
 
-# type = c(
-#   "intro_imput",
-#   "intro_ventil",
-#   "exped_imput",
-#   "exped_ventil",
-#   "ER_exped",
-#   "vin-spiritueux"
-# ),
-# start = c(
-#   date_ref - months(48),
-#   date_ref - months(24),
-#   date_ref - months(48),
-#   date_ref - months(24),
-#   date_ref - months(2),
-#   date_ref - months(12)
-# ),
-# end = date_ref) 
+fin=as.Date("2024-04-01")
+
+period=as.character(year(seq(debut,fin,by="year")))
 
 GroupFiltreSum <- function(data,
                             grouping_var,
@@ -150,7 +135,7 @@ RequeteParams = function(debut, fin) {
   return (meta_liste)
 }
 
-liste_requete = RequeteParams(debut = debut, fin = fin)
+liste_requete = RequeteParams(debut=debut,fin=fin)
 
 mes_requetes = liste_requete %>% 
   map( ~ GroupFiltreSum(
@@ -166,8 +151,85 @@ mes_requetes = liste_requete %>%
 
 
 
+cible_test = echantillon %>% filter(siren %in% c("056802218","056806813","056807290","056809957")) %>% distinct(siren)
+
+
+liste_fichiers <- data.frame(
+  type = c(
+    "intro_imput",
+    "intro_ventil",
+    "exped_imput",
+    "exped_ventil",
+    "ER_exped",
+    "vin-spiritueux"
+  ),
+  start = c(
+    date_ref - months(48),
+    date_ref - months(24),
+    date_ref - months(48),
+    date_ref - months(24),
+    date_ref - months(2),
+    date_ref - months(12)
+  ),
+  end = date_ref) %>% 
+  rowwise() %>% mutate(command =
+  map( .,.f= WriteCommand(start, end, (str_split(type, "_20") %>% flatten_chr())[1])))
+  
+
+request_data <-  bind_rows(
+  intro_imput_file %>%
+    subset(subset = !historical, select = -c(historical, astrineo_input, skiprows, encoding, dec)), 
+  exped_imput_file %>%
+    subset(subset = !historical, select = -c(historical, astrineo_input, skiprows, encoding, dec)), 
+  intro_ventil_file %>% select(-astrineo_input, skiprows, encoding, dec), 
+  exped_ventil_file %>% select(-astrineo_input, skiprows, encoding, dec),
+  ER_file %>% select(-c(skiprows, encoding, dec)), 
+  cniv_file %>% subset(subset = (type == "input"), select = c(directory, files, start, end))
+) %>% 
+  rowwise() %>%
+  mutate(
+    command = WriteCommand(start, end, (str_split(files, "_20") %>% flatten_chr())[1])
+  ) %>%
+  ungroup()
+
+
+
+dta = data %>%
+  filter (sire %in% cible_liste,
+          adep=="2024",
+          mdep %in% v) %>% 
+  group_by(sire,adep, mdep) %>%
+  summarise(n = sum(vart, na.rm = T)) %>%
+  collect()
+
+
+echantillon = sample %>% filter(date_beg=="2024-01-01")
+delete = delete %>% filter(!(is.na(siren_repreneur)))
+
+cible = echantillon %>% distinct(siren) %>% 
+  bind_rows(delete %>% distinct(siren)) %>% 
+  bind_rows(delete %>% distinct(siren=siren_repreneur)) %>% unique()
+
+cible_liste = c(unique(cible$siren))
+
+
+
+
+
+start_time=Sys.time()
+dta = data %>%
+  filter (sire %in% cible_liste,
+          adep=="2024",
+          mdep %in% v) %>% 
+  group_by(sire,adep, mdep) %>%
+  summarise(n = sum(vart, na.rm = T)) %>%
+  collect()
+print(Sys.time() - start_time)
+
+
 
 cible_test = echantillon %>% filter(siren %in% c("056802218","056806813","056807290","056809957")) %>% distinct(siren)
+
 
 
 WriteCommand <- function(from, to, type){
