@@ -43,11 +43,12 @@ GroupFiltreSum <- function(data,
            imex %in% flux,
            oblig %in% type,
            vaco %in% td,
-           sire %in% c("056802218","056806813","056807290","056809957","531597128") #pour test
+           sire %in% c("056802218") #pour test ,"056806813","056807290","056809957","531597128"
            ) %>% 
     group_by(
     across({{grouping_var}})) %>%  
-    summarise(across({{column_name }}, \(x) sum(x, na.rm = TRUE))) %>% 
+    summarise(across({{column_name }}, \(x) sum(x, na.rm = TRUE)), 
+              .groups = "drop") %>% 
     rename(siren = sire) %>% 
     collect()
   
@@ -57,7 +58,6 @@ GroupFiltreSum <- function(data,
 }
 
 # Parmètres des requetes
-
 RequeteParams = function(date_ref) {
   ER_exped = list(
     fichier = "ER_exped",
@@ -130,13 +130,14 @@ RequeteParams = function(date_ref) {
   return (meta_liste)
 }
 
+# Lancer à partir de la date de référence
 date_ref= as.Date("2024-04-01")
-
 liste_requete = RequeteParams(date_ref = date_ref)
 
+start = Sys.time()
 mes_requetes = liste_requete %>% 
   map( ~ GroupFiltreSum(
-           fichier =.$fichier,
+           fichier = .$fichier,
            annee = .$annee,
            flux = .$flux,
            type = .$type,
@@ -145,6 +146,6 @@ mes_requetes = liste_requete %>%
            td = .$td,
            cniv = .$cniv,
     data = data)) 
-
+Sys.time() - start
 list2env(mes_requetes, envir = .GlobalEnv)
 
