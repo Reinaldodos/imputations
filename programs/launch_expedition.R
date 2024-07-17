@@ -41,16 +41,6 @@ exped_imput <- full_join(
     method_ref = ifelse(is.na(method_ref_21), method_ref_29, method_ref_21)
   ) %>%
   select(siren, period, method, method_ref, prediction)
-# exped_imput <- bind_rows(
-#   exped_imput_29 %>% mutate(regdem = 29), 
-#   exped_imput_21 %>% mutate(regdem = 21)
-# ) %>% 
-#   group_by(siren, period) %>%
-#   summarise(prediction = sum(prediction), 
-#             method = case_when(
-#               is.na(method)
-#             ))
-
 
 ### Launch distributions
 

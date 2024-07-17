@@ -359,8 +359,8 @@ setMethod(
         ) %>%
         ungroup() %>%
         group_by_at(variable) %>%
-        summarise(vart = sum(vart_new)) %>%
-        ungroup() %>%
+        summarise(vart = sum(vart_new),
+                  .groups = "drop") %>%
         rename("siren" = "siren_new")
       # sirens_extra <- sample[sample %notin% unique(imput_data$siren)]
       sirens_extra <- subset(sample,
@@ -476,8 +476,8 @@ setMethod(
           siren_new, period, a129, nc8, payp, pyod,
           dept, regdem, temo, natr, conf
         ) %>%
-        summarise(vart = sum(vart_new)) %>%
-        ungroup() %>%
+        summarise(vart = sum(vart_new),
+                  .groups = "drop") %>%
         rename("siren" = "siren_new")
       detail_data <- detail_data %>%
         anti_join(delete_data, by = "siren") %>%
@@ -565,7 +565,8 @@ setMethod(
           )
         ) %>%
         group_by(siren_new, period) %>%
-        summarise(vfte = sum(vfte)) %>%
+        summarise(vfte = sum(vfte),
+                  .groups = "drop") %>%
         rename("siren" = "siren_new")
       saveRDS(
         ER_data,
@@ -732,8 +733,8 @@ setMethod(
       bind_rows() %>%
       mutate(nc8 = substr(ngp9, 1, 8)) %>%
       group_by(year, nc8, a129) %>%
-      summarise(ctci = unique(ctci)) %>%
-      ungroup()
+      summarise(ctci = unique(ctci),
+                .groups = "drop")
     return(pass_data)
   }
 )

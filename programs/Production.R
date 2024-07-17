@@ -44,8 +44,9 @@ import_pass_table = function(pass_names){
       bind_rows() %>%
       mutate(nc8 = substr(ngp9, 1, 8)) %>%
       group_by(year, nc8, a129) %>%
-      summarise(ctci = unique(ctci)) %>%
-      ungroup()
+      summarise(ctci = unique(ctci),
+                .groups = "drop"
+      )
     return(pass_data)
   }
 
@@ -67,9 +68,16 @@ GetNationalFormat = function(file_exped, file_introd, filename, exclu, matmil = 
       subset(subset = !(conf == "3"))
   }
   exped <- (mutate(exped, adep = year(period), mdep = month(period), flux = 'E')
-            %>% group_by(a129, pyod, flux, adep, mdep) %>% summarise(vart = sum(dist_prediction, na.rm = TRUE)))
+            %>% group_by(a129, pyod, flux, adep, mdep) %>% 
+              summarise(vart = sum(dist_prediction, na.rm = TRUE),
+                        .groups = "drop"
+              )
+            )
   intro <- (mutate(intro, adep = year(period), mdep = month(period), flux = 'I')
-            %>% group_by(a129, pyod, flux, adep, mdep) %>% summarise(vart = sum(dist_prediction, na.rm = TRUE)))
+            %>% group_by(a129, pyod, flux, adep, mdep) %>% 
+              summarise(vart = sum(dist_prediction, na.rm = TRUE),
+                        .groups = "drop"
+              ))
   result <- rbind(exped, intro) %>% subset(subset = (!(pyod %in% exclu) & !is.na(pyod) & (pyod != "") & 
                                                        !(is.na(a129)) & (a129 != "") & 
                                                        !is.na(adep) & (adep != "") & 
@@ -107,13 +115,17 @@ GetEurostatCTCIFormat = function(file_exped, file_introd,  filename, exclu){
             intro <-(intro
                      %>% mutate(ctci=ifelse(conf=="3","93100",ctci),payp = ifelse(conf=="3","QY",payp))
                      %>% group_by(ctci,payp,flux,adep,mdep) 
-                     %>% summarise(vart = sum(dist_prediction, na.rm = TRUE)) %>% rename("pyod(exped) / payp(intro)" = "payp"))
+                     %>% summarise(vart = sum(dist_prediction, na.rm = TRUE),
+                                   .groups = "drop"
+                     ) %>% rename("pyod(exped) / payp(intro)" = "payp"))
             exped <- (mutate(file_exped, adep = year(period), mdep = month(period), flux = 'E', adep_last = year(period_last))
                       %>% left_join(pass_table[,c("year", "nc8", "ctci")], by = c("adep_last" = "year", "nc8")))
             exped <- (exped 
                       %>% mutate(ctci=ifelse(conf=="3","93100",ctci),pyod=ifelse(conf=="3","QY",pyod))
                       %>% group_by(ctci,pyod,flux,adep,mdep) 
-                      %>% summarise(vart = sum(dist_prediction, na.rm = TRUE)) %>% rename("pyod(exped) / payp(intro)" = "pyod"))
+                      %>% summarise(vart = sum(dist_prediction, na.rm = TRUE),
+                                    .groups = "drop"
+                      ) %>% rename("pyod(exped) / payp(intro)" = "pyod"))
             result <- rbind(exped, intro) %>% 
               subset(subset = (!(`pyod(exped) / payp(intro)` %in% exclu) & !is.na(`pyod(exped) / payp(intro)`) & (`pyod(exped) / payp(intro)` != "") & 
                                  !(is.na(ctci)) & (ctci != "") & 
@@ -135,20 +147,46 @@ eurostatCTCI_prechiffre <- GetEurostatCTCIFormat(
 
 
 ## 3 - productions au format SH2 --------------
-GetEurostatSH2Format = function(file_exped, file_introd, filename, exclu){
-            result <- rbind(
-              mutate(file_exped, adep = year(period), mdep = month(period), flux = 'E', sh2 = ifelse(conf=="3","99",substr(nc8, 1, 2)),pyod=ifelse(conf=="3","QY",pyod))
-              %>% group_by(sh2, pyod, flux, adep, mdep) %>% summarise(vart = sum(dist_prediction, na.rm = TRUE)) %>% rename("pyod(exped) / payp(intro)" = "pyod"),
-              mutate(file_introd, adep = year(period), mdep = month(period), flux = 'I', sh2 = ifelse(conf=="3","99",substr(nc8, 1, 2)),payp=ifelse(conf=="3","QY",payp))
-              %>% group_by(sh2, payp, flux, adep, mdep) %>% summarise(vart = sum(dist_prediction, na.rm = TRUE)) %>% rename("pyod(exped) / payp(intro)" = "payp")
-            )%>% subset(subset = (!(`pyod(exped) / payp(intro)` %in% exclu) & !is.na(`pyod(exped) / payp(intro)`) & (`pyod(exped) / payp(intro)` != "") & 
-                                    !(is.na(sh2)) & (sh2 != "") & 
-                                    !is.na(adep) & (adep != "") & 
-                                    !is.na(mdep) & (mdep != "") & 
-                                    !is.na(vart)))
-            write.csv2(result, filename, row.names = FALSE, na = "")
-            return(result)
-          }
+GetEurostatSH2Format <- function(file_exped, file_introd, filename, exclu) {
+  result <- rbind(
+    mutate(
+      file_exped,
+      adep = year(period),
+      mdep = month(period),
+      flux = "E",
+      sh2 = ifelse(conf == "3", "99", substr(nc8, 1, 2)),
+      pyod = ifelse(conf == "3", "QY", pyod)
+    )
+    %>% group_by(sh2, pyod, flux, adep, mdep) %>% 
+      summarise(vart = sum(dist_prediction, na.rm = TRUE),
+                .groups = "drop"
+      ) %>% 
+      rename("pyod(exped) / payp(intro)" = "pyod"),
+    mutate(
+      file_introd,
+      adep = year(period),
+      mdep = month(period),
+      flux = "I",
+      sh2 = ifelse(conf == "3", "99", substr(nc8, 1, 2)),
+      payp = ifelse(conf == "3", "QY", payp)
+    )
+    %>% group_by(sh2, payp, flux, adep, mdep) %>% 
+      summarise(vart = sum(dist_prediction, na.rm = TRUE),
+                .groups = "drop"
+      ) %>% 
+      rename("pyod(exped) / payp(intro)" = "payp")
+  ) %>% subset(subset = (
+    !(`pyod(exped) / payp(intro)` %in% exclu) &
+      !is.na(`pyod(exped) / payp(intro)`) &
+      (`pyod(exped) / payp(intro)` != "") &
+      !(is.na(sh2)) & (sh2 != "") &
+      !is.na(adep) & (adep != "") &
+      !is.na(mdep) & (mdep != "") &
+      !is.na(vart)
+  ))
+  write.csv2(result, filename, row.names = FALSE, na = "")
+  return(result)
+}
 
 
 eurostatSH2_prechiffre <- GetEurostatSH2Format(
