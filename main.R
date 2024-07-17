@@ -19,11 +19,9 @@ memory.limit(9e12)
 # ETL INPUT FILES ---------------------------------------------------------
 
 if (!dir.exists(ETL_directory)) {
-  source(
-    file = "Refactoring/import et prep.R",
-    encoding = "UTF-8",
-    echo = TRUE
-  )
+  source(file = "Refactoring/import et prep.R",
+         encoding = "UTF-8",
+         echo = TRUE)
 }
 
 # IMPORT INPUT FILES ------------------------------------------------------
@@ -114,28 +112,28 @@ ER <- import_ER(input_object)
 ## Introduction ------------------------------------------------------
 
 start <- Sys.time()
-source("programs/launch_introduction.R")
+source("programs/launch_introduction.R", encoding = "UTF-8")
 print(Sys.time() - start)
 
 ## Expedition ------------------------------------------------------
 
 start <- Sys.time()
-source("programs/launch_expedition.R")
+source("programs/launch_expedition.R", encoding = "UTF-8")
 print(Sys.time() - start)
 
 # PRODUCTION ------------------------------------------------------
 
-source("programs/launch_production.R")
+source("programs/launch_production.R", encoding = "UTF-8")
 
 source("programs/imputations_NATR.R", encoding = "UTF-8")
 source("programs/imputations_transport48Kv2.R", encoding = "UTF-8")
-source("programs/prgm_C3290.R")
+source("programs/prgm_C3290.R", encoding = "UTF-8")
 
 
 # CONTROLE ------------------------------------------------------
 
-source("programs/Controles_imput_PC_yb.R")
+source("programs/Controles_imput_PC_yb.R", encoding = "UTF-8")
 
 # CNIV ------------------------------------------------------
 
-source("programs/launch_cniv.R")
+source("programs/launch_cniv.R", encoding = "UTF-8")

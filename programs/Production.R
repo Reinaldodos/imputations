@@ -2,7 +2,7 @@ pacman::p_load(lubridate,tidyverse)
 
 options(scipen = 999)
 
-source('config.R')
+source('config.R', encoding = "UTF-8")
 
 # A - recuperer les inputs -----------
 

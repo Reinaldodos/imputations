@@ -46,7 +46,7 @@ setClassUnion("logical_null", c("logical", "NULL"))
 
 `%notin%` <- Negate(`%in%`)
 
-source("programs/MSDtreatment.R")
+source("programs/MSDtreatment.R", encoding = "UTF-8")
 Input <- setClass(
   "Input",
 
