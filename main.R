@@ -94,17 +94,19 @@ exogenous_intro <-
     date_prediction = date_prediction
   )
 
-detail_intro <- import_detail(
-  object = input_object,
-  flow = "I",
+source(file = "Refactoring/Fonctions/import_detail.R",
+       encoding = "UTF-8")
+
+detail_intro <- 
+  import_detail(source_file = intro_ventil_file,
+                delete_data = delete, 
   condition = "payp %notin% c('XU', 'GB')"
 )
 
-detail_exped <- import_detail(
-  object = input_object,
-  flow = "E",
-  condition = "pyod %notin% c('XU', 'GB')"
-)
+detail_exped <-
+  import_detail(source_file = exped_ventil_file,
+                delete_data = delete,
+                condition = "pyod %notin% c('XU', 'GB')")
 
 endogenous_intro <- import_endogenous(input_object, "I")
 endogenous_exped <- import_endogenous(input_object, "E")
