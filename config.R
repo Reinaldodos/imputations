@@ -65,6 +65,7 @@ ventil_filename_format <- sprintf(
 
 input_directory <- "input"
 ETL_directory <- "ETL"
+pipeline_directory <- "pipeline"
 output_directory <- "output_PC"
 freenas_directory <- "Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI"
 dir.create(output_directory, showWarnings = F)

@@ -83,56 +83,48 @@ msd <-
   ) %>%
   arrow::read_feather()
 
-source(file = "Refactoring/Fonctions/import_ca3.R",
-       encoding = "UTF-8")
+if (!dir.exists(pipeline_directory)) {
+  source(
+    file = "Refactoring/prep pipeline.R",
+    encoding = "UTF-8",
+    echo = TRUE
+  )
+}
 
 exogenous_intro <-
-  import_ca3(
-    base_CA3 = base_CA3,
-    sample_intro = sample_intro,
-    delete_data = delete,
-    date_prediction = date_prediction
-  )
-
-source(file = "Refactoring/Fonctions/import_detail.R",
-       encoding = "UTF-8")
+  file.path(
+    pipeline_directory,
+    "exogenous_intro.arrow"
+  ) %>%
+  arrow::read_feather()
 
 detail_intro <- 
-  import_detail(source_file = intro_ventil_file,
-                delete_data = delete, 
-  condition = "payp %notin% c('XU', 'GB')"
-)
+  file.path(
+    pipeline_directory,
+    "detail_intro.arrow"
+  ) %>%
+  arrow::read_feather()
 
 detail_exped <-
-  import_detail(source_file = exped_ventil_file,
-                delete_data = delete,
-                condition = "pyod %notin% c('XU', 'GB')")
-
-source(file = "Refactoring/Fonctions/import_endogenous.R",
-       encoding = "UTF-8")
+  file.path(
+    pipeline_directory,
+    "detail_exped.arrow"
+  ) %>%
+  arrow::read_feather()
 
 endogenous_intro <-
-  import_endogenous(
-    source_file = intro_imput_file,
-    flow = "I",
-    sample = sample_intro,
-    delete_data = delete,
-    historical_directory = historical_directory,
-    input_directory = input_directory,
-    save_historical_input = save_historical_input
-  )
-
+  file.path(
+    pipeline_directory,
+    "endogenous_intro.arrow"
+  ) %>%
+  arrow::read_feather()
+  
 endogenous_exped <-
-  import_endogenous(
-    source_file = exped_imput_file,
-    flow = "E",
-    sample = sample_exped,
-    delete_data = delete,
-    historical_directory = historical_directory,
-    input_directory = input_directory,
-    save_historical_input = save_historical_input
-  )
-
+  file.path(
+    pipeline_directory,
+    "endogenous_exped.arrow"
+  ) %>%
+  arrow::read_feather()
 
 ER <- import_ER(input_object)
 
