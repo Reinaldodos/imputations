@@ -3,10 +3,10 @@ options(scipen = 999)
 
 purrr::walk(
   .x = c(
-    "config.R",
-    "programs/NR.R",
-    "programs/Production.R",
-    "programs/CNIV.R"
+    "config.R"
+    # "programs/NR.R",
+    # "programs/Production.R",
+    # "programs/CNIV.R"
   ),
   .f = source,
   encoding = "UTF-8"
@@ -108,8 +108,31 @@ detail_exped <-
                 delete_data = delete,
                 condition = "pyod %notin% c('XU', 'GB')")
 
-endogenous_intro <- import_endogenous(input_object, "I")
-endogenous_exped <- import_endogenous(input_object, "E")
+source(file = "Refactoring/Fonctions/import_endogenous.R",
+       encoding = "UTF-8")
+
+endogenous_intro <-
+  import_endogenous(
+    source_file = intro_imput_file,
+    flow = "I",
+    sample = sample_intro,
+    delete_data = delete,
+    historical_directory = historical_directory,
+    input_directory = input_directory,
+    save_historical_input = save_historical_input
+  )
+
+endogenous_exped <-
+  import_endogenous(
+    source_file = exped_imput_file,
+    flow = "E",
+    sample = sample_exped,
+    delete_data = delete,
+    historical_directory = historical_directory,
+    input_directory = input_directory,
+    save_historical_input = save_historical_input
+  )
+
 
 ER <- import_ER(input_object)
 

@@ -8,7 +8,7 @@ use_historical_data <- function(current_imput_data,
                                 historical_directory,
                                 flow_name,
                                 date_ref) {
-  if (object@use_historical_basis) {
+  if (use_historical_basis) {
     historical_imput_data <- read_historical_data(
       historical_directory = historical_directory,
       filename = sprintf("endogenous_%s.rds", flow_name),
@@ -82,12 +82,12 @@ read_historical_data <- function(historical_directory, filename, date_ref) {
 
 read_current_data <- function(source_file) {
   source_file$files %>%
-    map_df(~ data_treatment(
+    map(~ data_treatment(
       source_file,
       .x,
       total_variable = "sire",
       rename_list = c("siren" = "sire")
-    )) %>%
+    ), .progress = TRUE) %>%
     bind_rows()
 }
 
