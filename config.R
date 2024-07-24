@@ -2,7 +2,6 @@ pacman::p_load(tidyverse)
 
 c(
   "programs/Input.R",
-  "Refactoring/Fonctions.R",
   "Refactoring/tests.R"
 ) %>%
   walk(

@@ -83,6 +83,8 @@ msd <-
   ) %>%
   arrow::read_feather()
 
+source(file = "Refactoring/Fonctions/import_ca3.R",
+       encoding = "UTF-8")
 
 exogenous_intro <-
   import_ca3(
