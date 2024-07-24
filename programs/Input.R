@@ -224,50 +224,6 @@ get_sample_by_flow <- function(sample, flow) {
     return()
 }
 
-setGeneric(
-  name = "import_delete",
-  def = function(object, pattern = "suppressions") {
-    standardGeneric("import_delete")
-  }
-)
-setMethod(
-  f = "import_delete",
-  signature = "Input",
-  definition = function(object, pattern = "suppressions") {
-    if (!file.exists(file.path(object@input_directory, "delete.rds"))) {
-      delete_data_initial <- readRDS(file.path(object@historical_directory, "delete.rds"))
-      delete_data <- readRDS(file.path(
-        last(object@sample$directory),
-        "removing_list.rds"
-      )) %>%
-        mutate(siren_repreneur = str_sub(str_replace_all(tva_repreneur, pattern = " ", replacement = ""), -9, -1)) %>%
-        group_by(siren) %>%
-        mutate(n_repreneur = n_distinct(siren_repreneur)) %>%
-        ungroup() %>%
-        mutate(ratio = 1 / n_repreneur) %>%
-        select(siren, siren_repreneur, ratio)
-
-      delete_data <- bind_rows(
-        anti_join(delete_data_initial,
-          delete_data,
-          by = "siren"
-        ),
-        delete_data
-      )
-      saveRDS(
-        delete_data,
-        file.path(object@historical_directory, "delete.rds")
-      )
-
-      saveRDS(delete_data, file.path(object@input_directory, "delete.rds"))
-    } else {
-      delete_data <- readRDS(file.path(object@input_directory, "delete.rds"))
-    }
-    return(delete_data)
-  }
-)
-
-
 # ===============================================================================
 # Import endogenous
 # ===============================================================================
