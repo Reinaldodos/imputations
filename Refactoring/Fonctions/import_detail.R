@@ -85,7 +85,8 @@ import_detail <- function(source_file, delete_data, condition) {
   detail_data <- load_detail_data(source_file, condition)
   modified_data <- join_and_modify_data(detail_data, delete_data)
   summarized_data <- summarize_data(modified_data)
-  result_data <- merge_modified_and_original_data(detail_data, delete_data, summarized_data)
+  result_data <- merge_modified_and_original_data(detail_data, delete_data,
+                                                  summarized_data)
   
   return(result_data)
 }
