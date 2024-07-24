@@ -1,17 +1,32 @@
 
 # Sous-fonction pour charger les données de détail
 load_detail_data <- function(source_file, condition) {
-  source_file$files %>%
-    map(
-      .f = data_treatment,
-      source_file = source_file,
-      file = .x,
-      rename_list = c("siren" = "sire"),
-      total_variable = "sire",
-      condition = condition,
-      .progress = TRUE
-    ) %>%
-    bind_rows()
+  
+  source(file = "Refactoring/Fonctions/data_treatment.R")
+  
+  source_data =
+    source_file %>%
+    rowwise() %>%
+    mutate(data = list(
+      data_treatment(
+        file_path = file.path(directory, files),
+        start_date = start,
+        end_date = end,
+        rename_list = c("siren" = "sire"),
+        total_variable = "sire",
+        astrineo_input = astrineo_input,
+        col_classes = Classes,
+        skiprows = skiprows,
+        encoding = encoding,
+        dec = dec
+      )
+    )
+    )
+  
+  source_data %>% 
+    select(data) %>% 
+    unnest(cols = c(data)) %>% 
+    filter(!!!parse_exprs(condition)) 
 }
 
 # Sous-fonction pour joindre et modifier les données
