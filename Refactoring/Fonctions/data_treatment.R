@@ -63,7 +63,7 @@ filter_and_rename_data <- function(data, condition, rename_list) {
 }
 
 # Fonction principale
-data_treatment <-
+data_treatment_v2 <-
   function(file_path,
            start_date,
            end_date,

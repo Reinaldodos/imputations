@@ -2,13 +2,14 @@
 # Sous-fonction pour charger les données de détail
 load_detail_data <- function(source_file, condition) {
   
-  source(file = "Refactoring/Fonctions/data_treatment.R")
+  source(file = "Refactoring/Fonctions/data_treatment.R",
+         encoding = "UTF-8")
   
   source_data =
     source_file %>%
     rowwise() %>%
     mutate(data = list(
-      data_treatment(
+      data_treatment_v2(
         file_path = file.path(directory, files),
         start_date = start,
         end_date = end,
