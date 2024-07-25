@@ -81,6 +81,7 @@ msd <-
   ) %>%
   arrow::read_feather()
 
+msd = msd %>% mutate(flux = str_sub(Flux,1,1))
 
 exogenous_intro <-
   import_ca3(
