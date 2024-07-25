@@ -126,7 +126,14 @@ endogenous_exped <-
   ) %>%
   arrow::read_feather()
 
-ER <- import_ER(input_object)
+# ER <- import_ER(input_object)
+  
+ER <-
+  file.path(
+    pipeline_directory,
+    "etats_recap.arrow"
+  ) %>%
+  arrow::read_feather()
 
 # LAUNCH SIMULATIONS ------------------------------------------------------
 

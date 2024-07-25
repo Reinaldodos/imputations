@@ -74,3 +74,11 @@ import_endogenous(
     "endogenous_exped.arrow"
   ))
 
+# Etats récapitulatifs (ER) -----------------------------------------------
+
+import_ER(ER_file = ER_file, 
+          delete_data = delete) %>% 
+  arrow::write_feather(sink = file.path(
+    pipeline_directory,
+    "etats_recap.arrow"
+  ))
