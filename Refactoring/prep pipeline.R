@@ -17,6 +17,8 @@ exogenous_intro <-
     "exogenous_intro.arrow"
   ))
 
+gc(full = TRUE)
+
 # ETL detail --------------------------------------------------------------
 
 source(file = "Refactoring/Fonctions/import_detail.R",
@@ -31,7 +33,6 @@ import_detail(source_file = intro_ventil_file,
     "detail_intro.arrow"
   ))
 
-
 import_detail(source_file = exped_ventil_file,
                 delete_data = delete,
                 condition = "pyod %notin% c('XU', 'GB')") %>% 
@@ -40,6 +41,7 @@ import_detail(source_file = exped_ventil_file,
     "detail_exped.arrow"
   ))
 
+gc(full = TRUE)
 
 # ETL endogenous ----------------------------------------------------------
 
@@ -74,6 +76,8 @@ import_endogenous(
     "endogenous_exped.arrow"
   ))
 
+gc(full = TRUE)
+
 # Etats récapitulatifs (ER) -----------------------------------------------
 
 import_ER(ER_file = ER_file, 
@@ -82,3 +86,5 @@ import_ER(ER_file = ER_file,
     pipeline_directory,
     "etats_recap.arrow"
   ))
+
+gc(full = TRUE)
