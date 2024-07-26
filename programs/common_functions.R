@@ -37,10 +37,10 @@ read_file <- function(data_file, rename_list = NULL, colClasses, period_filter =
 }
 
 # echantillon <- read_file(data.frame(
-#   directory = "Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI/échantillon/échantillon 202201/datas",
+#   directory = "Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI/?chantillon/?chantillon 202201/datas",
 #   files = "echantillon_actualise_2022_01-s4v2-pour stats.csv",
 #   encoding = "UTF-8", sep = ";", dec = ",", na_strings = "", skiprows = 0, flux = "E"
-#   ), rename_list = c('type_enquete' = 'type.d.enquête'), colClasses = Classes, add_variable = T, 
+#   ), rename_list = c('type_enquete' = 'type.d.enqu?te'), colClasses = Classes, add_variable = T, 
 #   variable_name = "flux")
 
 #####################
@@ -61,10 +61,10 @@ check_production <- function(data, not_include){
 
 check_imputation <- function(data, siren_list, period, monthly_threshold = 2e9){
   if (length(unique(data$period)) != length(period)){
-    stop("La liste de période est soit trop longue soit trop courte !")
+    stop("La liste de p?riode est soit trop longue soit trop courte !")
   }else{
     if (!all(unique(data$period) == period)){
-      stop("La liste de période ne correspond pas !")
+      stop("La liste de p?riode ne correspond pas !")
     }
   }
   
@@ -77,7 +77,7 @@ check_imputation <- function(data, siren_list, period, monthly_threshold = 2e9){
   }
   
   if (sum(data$prediction, na.rm = T) > monthly_threshold){
-    warning(sprintf("La prédiction totale est supérieure à %s.", 
+    warning(sprintf("La pr?diction totale est sup?rieure ? %s.", 
                     formatC(monthly_threshold, format = "e", digits = 0)))
   }
 }
@@ -85,16 +85,16 @@ check_imputation <- function(data, siren_list, period, monthly_threshold = 2e9){
 check_ventilation <- function(imput_data, ventil_data, flow = "E", loss = 20){
   if (flow == "E"){
     if (sum(!is.na(ventil_data$dist_prediction) & is.na(ventil_data$pyod)) > 0){
-      stop("A l'expédition, pyod ne peut pas être nul !")
+      stop("A l'exp?dition, pyod ne peut pas ?tre nul !")
     }
     
     if (sum(ventil_data$pyod %in% c('XU', 'GB')) > 0){
-      stop("A l'expédition, pyod ne peut contenir ni 'XU' ni 'GB' !")
+      stop("A l'exp?dition, pyod ne peut contenir ni 'XU' ni 'GB' !")
     }
   }
   if (flow == "I"){
     if (sum(!is.na(ventil_data$dist_prediction) & is.na(ventil_data$payp)) > 0){
-      stop("A l'introduction, payp ne peut pas êtr nul !")
+      stop("A l'introduction, payp ne peut pas ?tr nul !")
     }
     
     if (sum(ventil_data$payp %in% c('XU', 'GB')) > 0){
@@ -106,14 +106,16 @@ check_ventilation <- function(imput_data, ventil_data, flow = "E", loss = 20){
     group_by(siren, period) %>%
     summarise(sum_ratio = sum(ratio, na.rm = T), 
               check_diff_prediction = (!is.na(sum(dist_prediction)) & (sum(dist_prediction) - unique(prediction) > 1)),
-              dist_prediction = sum(dist_prediction, na.rm = T))
+              dist_prediction = sum(dist_prediction, na.rm = T),
+              .groups = "drop"
+    )
   if (max(check_ventil$sum_ratio, na.rm = T) > 1){
     print(subset(check_ventil, subset = (sum_ratio > 1)))
-    stop("La somme des ratios est supérieure à 1 !")
+    stop("La somme des ratios est sup?rieure ? 1 !")
   } 
   if (any(check_ventil$check_diff_prediction)){
     print(subset(check_ventil, subset = check_diff_prediction))
-    stop("La somme des montants distribués ne correspond pas à la valeur prédite !")
+    stop("La somme des montants distribu?s ne correspond pas ? la valeur pr?dite !")
   }
   
   if (length(unique(imput_data$siren)) != length(unique(ventil_data$siren))){
@@ -125,16 +127,18 @@ check_ventilation <- function(imput_data, ventil_data, flow = "E", loss = 20){
                                   by = c("siren", "period")) %>%
     group_by(period) %>%
     summarise(dist_prediction = sum(dist_prediction, na.rm = T), 
-              prediction = sum(prediction, na.rm = T)) %>%
+              prediction = sum(prediction, na.rm = T),
+              .groups = "drop"
+    ) %>%
     mutate(check_loss = (prediction - dist_prediction)/prediction*100)
   if (any(check_ventil_imput$check_loss < 0)){
     print(check_ventil_imput)
-    stop("La somme du fichier ventilation est supérieure que celle du fichier imputation !")
+    stop("La somme du fichier ventilation est sup?rieure que celle du fichier imputation !")
   }
   
   if (any(check_ventil_imput$check_loss > loss)){
     print(check_ventil_imput)
-    warning("La perte liée aux entrants est trop importante !")
+    warning("La perte li?e aux entrants est trop importante !")
   }
   
 }
@@ -151,7 +155,9 @@ auto_check_ventilation <- function(imput_files, ventil_file, classes, directory,
   }
   imputation <- imputation %>%
     group_by(siren, period) %>%
-    summarise(prediction = sum(prediction, na.rm = T))
+    summarise(prediction = sum(prediction, na.rm = T),
+              .groups = "drop"
+    )
   
   ventilation <- read.csv2(
     file = file.path(directory, ventil_file), 

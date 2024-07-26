@@ -12,7 +12,7 @@ c(
 
 # DATE ------------------------------------------------------
 
-date_ref <- as_date("2024-05-01")
+date_ref <- as_date("2024-06-01")
 nb_date_prediction <- 2
 first_publication_date <- as_date("2022-01-01")
 date_prediction <- seq.Date(
@@ -122,7 +122,7 @@ sample_file <- data.frame(
   directory = sample_directory, 
   files = c("2022_FE_1_2022M032EC-s5v18.csv",
             "2023_FE_4_8.5_20240115.csv",
-            "2024_FE_1_1.5_20240612.csv"), 
+            "2024_FE_1_1.6_20240719.csv"), 
   encoding = "UTF-8", 
   date_beg = date_sample,
   dec = ",",
@@ -295,7 +295,7 @@ pass_file <- data.frame(
 y <- unique(year(date_publication))
 cniv_file <- data.frame(
   files = c(
-    "Extraction de la table Nomenc viti 2023_12.csv",
+    "Extraction de la table Nomenc viti 2024_07.csv",
     "Table Inter viti 2022 avec clients prod INES.xls",
     "EXPORTATIONS_DEB-DAU_CNIV.xlsx",
     sprintf(
@@ -311,5 +311,8 @@ cniv_file <- data.frame(
   skiprows = c(0, 1, 0, 15),
   start = make_date(year = min(y) - 1, month = 1, day = 1),
   end = date_ref,
+  dec = ",",
+  encoding = "UTF-8",
   astrineo_input = c(F, F, F, T)
+  
 )
