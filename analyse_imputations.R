@@ -1,5 +1,5 @@
 options(scipen = 999) 
-pacman::p_load(RPostgreSQL,tidyverse,rio,data.table,openxlsx,janitor,xlsx,dbplyr,arrow,duckdb,fs,tidyverse,DBI,plotly,divRmethodo)
+pacman::p_load(RPostgreSQL,tidyverse,rio,data.table,openxlsx,janitor,xlsx,dbplyr,arrow,duckdb,fs,tidyverse,DBI,plotly,divRmethodo,corrr)
 memory.limit(9999999999)
 
 `%notin%` <- Negate(`%in%`)
@@ -66,7 +66,7 @@ Base_historique = Base_historique %>%
 
 table_imputations = Base_historique %>%
   distinct(siren, period, flux, regdem,prediction, dist_prediction, method, method_ref, source, moisref) %>%
-  filter(source == "chiffre" & moisref <  period + months(3))
+  filter(source == "prechiffre" & moisref <  period + months(3))
 
 
 # Table des valeurs observées et imputées
@@ -272,12 +272,19 @@ openXL(wb)
 
 
 Compter= table_revert %>% filter(period > "2022-12-01",
-                                 prediction > 0,
-                                 prediction < 10000000,
+                                 # prediction > 0,
+                                 # prediction < 10000000,
                                  method %notin% c("reglementation")) %>% 
-  group_by(flux,regdem,time,top) %>% 
+  mutate(annee=year(period)) %>% 
+  group_by(annee,flux,time,top) %>% 
   summarise(n= n(),vart=sum(vart,na.rm=T),
-            predit=sum(predit,na.rm=T))
+            predit=sum(predit,na.rm=T),
+            pct = round(100*(predit-vart)/vart),
+            .groups = "drop") %>% 
+  group_by(annee,flux,time) %>% 
+  mutate(across(c(n,vart,predit),\(x) sum(x, na.rm = TRUE),.names = "sum_{.col}"),
+         pct_n=100*(n/sum_n),pct_predit=100*(predit/sum_predit)
+  )
   
 Compter_tout= table_revert %>% 
   group_by(year(period),flux,time,top) %>% 
@@ -285,7 +292,62 @@ Compter_tout= table_revert %>%
             predit=sum(predit,na.rm=T))
 
 
+# correlation
 
+
+table = table_filter %>% 
+  filter(flux == "intro"  & period > "2022-12-01" & time == "first_estimate") 
+cor.test(table$prediction, table$vart, method=c("pearson", "kendall", "spearman"))
+# introfirst = 0.8286175
+# introsecond = 0.5125456
+# introthird = 0.4636
+
+table_filter %>% ungroup() %>% select(vart,predit) %>% 
+  correlate() %>% 
+  rearrange() 
+ 
+
+
+
+# expedfirst = 0.8389491
+# expedsecond = 0.8662999
+# expedthird = 0.8663146
+
+
+
+cor = cor.test(table_filter$prediction,
+               table_filter$vart,
+               method = c("pearson", "kendall", "spearman"))
+
+
+correlation = function(table) {
+  
+  cor = cor.test(table$prediction,
+                 table$vart,
+                 method = c("pearson", "kendall", "spearman"))
+  return(data.table(
+          flux = unique(table$flux),
+          time = unique(table$time),
+          n = cor$parameter,
+          method = unique(table$method),
+          estimation = cor$estimate,
+          intervalle = cor$conf.int
+    )
+  )
+}
+
+table = table_filter %>% 
+  ungroup() %>% 
+  filter(period > "2022-12-01") %>% 
+  mutate(entree = paste(flux,time,method,sep="_")) %>% 
+  # filter(flux == "intro",
+  #        time == "first_estimate") %>% 
+  split(.$entree) %>% 
+  map( ~ correlation(.)) %>% bind_rows() %>% 
+  group_by(flux,time,method,n) %>%
+  mutate(type = paste0("intervalle_",1:n())) %>%
+  pivot_wider(.,names_from = type,values_from = intervalle) %>%
+  unique()
 
 # produire les graph
 
