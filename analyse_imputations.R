@@ -47,6 +47,23 @@ table_donnees = table_donnees %>%
 
 saveRDS(table_donnees,"analyses/table_donnees.rds")
 
+# table donnees detail
+
+table_nc8 = data %>%
+  filter(adep %in% c("2022","2023","2024"),
+         oblig == "1") %>%
+  group_by(sire, adep, mdep, imex, regdem,payp,pyod,nc8) %>%
+  summarise(vart = sum(vart, na.rm = T)) %>%
+  collect()
+
+table_nc8 = table_nc8 %>% 
+  ungroup() %>%
+  mutate(siren = sire,
+         flux = ifelse(imex == 3, "intro", "exped"),
+         period = make_date(year=adep,month=mdep,1)) %>%
+  distinct(siren, period, flux, vart,regdem) 
+
+saveRDS(table_nc8,"analyses/table_nc8.rds")
 
 #-------------------------------------------------------------------------------
 table_donnees = readRDS("analyses/table_donnees.rds")
@@ -54,6 +71,8 @@ table_donnees = readRDS("analyses/table_donnees.rds")
 # Lecture de la base historique des imputations --------------------------------
 Base_historique <- readRDS("Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI/traitement non-réponse/historique/Base_historique.rds")
 echantillon <- readRDS("Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI/échantillon/échantillon_202401/2024_FE_1_1.5_20240612.rds")
+
+
 
 Base_historique = Base_historique %>%
   mutate(moisref = make_date(
@@ -98,8 +117,71 @@ TNR %>% ggplot( aes(x=period, y=tnr, fill=time)) +
   geom_bar(stat="identity", position=position_dodge())+
   facet_grid(flux ~ .)
 
+# Profilage des taux => qualite et APE, P3
+
+
+ProfilQ = table_revert %>% 
+  left_join(echantillon %>% mutate(echant=1),by="siren") %>% 
+  mutate(annee=year(period)) %>% 
+  distinct(annee,siren,time,qualite)
+voirQ =TB(ProfilQ,annee,qualite) %>% 
+  filter(!is.na(qualite)) %>%
+  mutate(tot=sum(n),pct=100*n/tot)
+
+voirQ %>% rio::export("analyses/table_Q.xlsx")
+
+
+ProfilAPE = table_revert %>% 
+  left_join(echantillon %>% mutate(echant=1),by="siren") %>% 
+  mutate(annee=year(period)) %>% 
+  distinct(siren,activitePrincipaleUniteLegale)
+
+voirAPE =TB(ProfilAPE,activitePrincipaleUniteLegale) %>% 
+  filter(!is.na(activitePrincipaleUniteLegale)) %>%
+  mutate(tot=sum(n),pct=100*n/tot)
+
+voirE=TB(echantillon,activitePrincipaleUniteLegale) %>%
+  mutate(tot=sum(n),pct_echant=100*n/tot)
+
+voirAPE = voirAPE %>% left_join(voirE,by="activitePrincipaleUniteLegale") %>% 
+  distinct(activitePrincipaleUniteLegale,pct,pct_echant)
+
+
+voirAPE %>% rio::export("analyses/table_APE.xlsx")
+  
+# Entreprises à plus 10M
+
+UL10M= table_revert %>% filter(predit>10000000) %>% 
+  filter(method %notin% c("reglementation"))
+
+
+# ratio de réponse par an
+
+
+table_r = table_donnees %>% 
+  group_by(siren,period,flux) %>% 
+  summarise(vart = sum(vart, na.rm = T),
+   .groups="drop") %>% 
+  mutate(annee = year(period)) %>% 
+  group_by(siren,annee,flux) %>% 
+  mutate(ratio=n()) %>% 
+  ungroup()
+
+
+table_revert = table_revert %>% ungroup() %>% 
+  left_join(table_r %>% distinct(siren,period,flux,ratio)) %>% 
+  mutate(annee=year(period))
+  
 
 table_revert_top = table_revert %>% filter(top==1)
+
+
+
+moyenne_ratio = table_revert_top %>% 
+  group_by(annee,time,method) %>% 
+  summarise(moy=mean(ratio,na.rm=TRUE))
+  
+
 
 
 table_lastestimate = table_revert_top %>% 
@@ -294,30 +376,8 @@ Compter_tout= table_revert %>%
 
 # correlation
 
-
-table = table_filter %>% 
-  filter(flux == "intro"  & period > "2022-12-01" & time == "first_estimate") 
-cor.test(table$prediction, table$vart, method=c("pearson", "kendall", "spearman"))
-# introfirst = 0.8286175
-# introsecond = 0.5125456
-# introthird = 0.4636
-
-table_filter %>% ungroup() %>% select(vart,predit) %>% 
-  correlate() %>% 
-  rearrange() 
- 
-
-
-
-# expedfirst = 0.8389491
-# expedsecond = 0.8662999
-# expedthird = 0.8663146
-
-
-
-cor = cor.test(table_filter$prediction,
-               table_filter$vart,
-               method = c("pearson", "kendall", "spearman"))
+table_corr = table_revert_top %>% 
+  filter(method %notin% c("reglementation"))
 
 
 correlation = function(table) {
@@ -336,7 +396,7 @@ correlation = function(table) {
   )
 }
 
-table = table_filter %>% 
+table = table_corr %>% 
   ungroup() %>% 
   filter(period > "2022-12-01") %>% 
   mutate(entree = paste(flux,time,method,sep="_")) %>% 
@@ -348,6 +408,14 @@ table = table_filter %>%
   mutate(type = paste0("intervalle_",1:n())) %>%
   pivot_wider(.,names_from = type,values_from = intervalle) %>%
   unique()
+
+
+# exporter la table
+
+
+table %>% rio::export("analyses/table_correlation.xlsx")
+
+
 
 # produire les graph
 
@@ -407,5 +475,7 @@ openXL(wb)
 
 
 
-  
+# Analyse A129 * pays ----------------------------------------------------------
+
+A129 = table_revert_top %>% group_by(annee,)
 
