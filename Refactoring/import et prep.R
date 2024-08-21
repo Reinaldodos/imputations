@@ -12,6 +12,8 @@ sample_file %>%
     "echantillon.arrow"
   ))
 
+gc(full = TRUE)
+
 # ETL delete data -----------------------------------------------------------------
 
 source(file = "Refactoring/Fonctions/ETL_delete_data.R",
@@ -26,6 +28,7 @@ ETL_delete_data(
   )
 )
 
+gc(full = TRUE)
 
 # ETL MSD -----------------------------------------------------------------
 
@@ -38,3 +41,5 @@ msd_file %>%
     ETL_directory,
     "MSD.arrow"
   ))
+
+gc(full = TRUE)
