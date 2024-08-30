@@ -28,6 +28,7 @@ GroupFiltreSum <- function(data,
                             td,
                             flux,
                             annee,
+                            regime,
                             liste_mois,
                             cniv) {
   
@@ -42,17 +43,16 @@ GroupFiltreSum <- function(data,
     filter(adep %in% annee,
            imex %in% flux,
            oblig %in% type,
-           vaco %in% td,
-           sire %in% c("056802218") #pour test ,"056806813","056807290","056809957","531597128"
+           regdem %in% regime,
+           # sire %in% c("056802218","056806813","056807290","056809957","531597128"),
+           vaco %in% td
            ) %>% 
-    group_by(
-    across({{grouping_var}})) %>%  
-    summarise(across({{column_name }}, \(x) sum(x, na.rm = TRUE)), 
-              .groups = "drop") %>% 
+    group_by(across({{grouping_var}})) %>%  
+    summarise(across({{column_name}}, \(x) sum(x, na.rm = TRUE)),.groups = "drop") %>% 
     rename(siren = sire) %>% 
     collect()
   
-  # saveRDS(table,paste0(fichier,".rds")) #enregistrer ou pas, dans ETL ?
+  saveRDS(table,paste0(fichier,".rds")) #enregistrer ou pas, dans ETL ?
   
   return(table)
 }
@@ -66,6 +66,7 @@ RequeteParams = function(date_ref) {
     type = c("4"),
     flux = c("4"),
     td = c("0"),
+    regime = c("21"),
     annee = as.character(year(seq(date_ref - months(2), date_ref, by = "year"))),
     cniv=FALSE
   )
@@ -76,6 +77,7 @@ RequeteParams = function(date_ref) {
     type = c("1"),
     flux = c("4"),
     td = c("1", "3"),
+    regime = c("21","29"),
     annee = as.character(year(seq(date_ref - months(48), date_ref, by = "year"))),
     cniv=FALSE
   )
@@ -86,6 +88,7 @@ RequeteParams = function(date_ref) {
     type = c("1"),
     flux = c("4"),
     td = c("1", "3"),
+    regime = c("21","29"),
     annee = as.character(year(seq(date_ref - months(24), date_ref, by = "year"))),
     cniv=FALSE
   )
@@ -96,6 +99,7 @@ RequeteParams = function(date_ref) {
     type = c("1"),
     flux = c("3"),
     td = c("1", "3"),
+    regime = c("11","19"),
     annee = as.character(year(seq(date_ref - months(48), date_ref, by = "year"))),
     cniv=FALSE
   )
@@ -106,16 +110,18 @@ RequeteParams = function(date_ref) {
     type = c("1"),
     flux = c("3"),
     td = c("1", "3"),
+    regime = c("11","19"),
     annee = as.character(year(seq(date_ref - months(24), date_ref, by = "year"))),
     cniv=FALSE
   )
   vin_spiritueux = list(
     fichier = "vin_spiritueux",
-    grouping_var = c( "sire", "adep", "mdep", "ngp", "nc8"),
+    grouping_var = c( "sire", "adep","regdem", "mdep", "ngp", "nc8"),
     column_name = c("vart","usup"),
     type = c("1","4"),
     flux = c("1","2","3","4"),
     td = c("1", "3"),
+    regime = c("11","19","21","29"),
     annee = as.character(year(seq(date_ref - months(12), date_ref, by = "year"))),
     cniv = TRUE
   )
@@ -131,7 +137,7 @@ RequeteParams = function(date_ref) {
 }
 
 # Lancer à partir de la date de référence
-date_ref= as.Date("2024-04-01")
+date_ref= as.Date("2024-07-01")
 liste_requete = RequeteParams(date_ref = date_ref)
 
 start = Sys.time()
@@ -142,10 +148,13 @@ mes_requetes = liste_requete %>%
            flux = .$flux,
            type = .$type,
            grouping_var = .$grouping_var,
-           column_name = .$column_var,
+           column_name = .$column_name,
            td = .$td,
+           regime=.$regime,
            cniv = .$cniv,
     data = data)) 
 Sys.time() - start
 list2env(mes_requetes, envir = .GlobalEnv)
+
+
 
