@@ -154,7 +154,49 @@ mes_requetes = liste_requete %>%
            cniv = .$cniv,
     data = data)) 
 Sys.time() - start
+
+
+MakeDate = function(data){
+  data = data %>% mutate(period = make_date(
+    year = adep,
+    month = mdep,
+    day = 1
+  )) %>% select(-adep,-mdep)
+return(data)
+}
+
+liste_tb = liste_table %>% map(~ MakeDate(.))
+
 list2env(mes_requetes, envir = .GlobalEnv)
 
+LIRE_TOUT= function(filepaths){
+  filepaths <-
+    filepaths %>% set_names(nm = basename(.) %>% tools::file_path_sans_ext())
+  files <- invisible(purrr::map(filepaths, rio::import))
+  invisible(purrr::pmap(
+    .l = list(.x = names(files), .y = files),
+    .f = ~ assign(.x, .y, envir = .GlobalEnv)
+  ))
+}
+filepaths <- list.files("sorties_test/",full.names = TRUE, recursive = TRUE, pattern = "*.rds") 
+LIRE_TOUT_liste(filepaths = 
+            filepaths)
+LIRE_TOUT_liste= function(filepaths){
+  filepaths <-
+    filepaths %>% set_names(nm = basename(.) %>% tools::file_path_sans_ext())
+  files <- invisible(purrr::map(filepaths, rio::import))
 
+}
+
+endogenous_expedH=endogenous_exped_histo %>%
+  filter(period >= (date_ref - years(11)) &
+           period <= (date_ref - years(4) - months(1)))
+
+endogenous_introH=endogenous_intro_histo %>%
+  filter(period >= (date_ref - years(11)) &
+           period <= (date_ref - years(4) - months(1)))
+
+# voir=endogenous_introH %>% distinct(period) %>% arrange(period)
+
+endo_intro = intro_imput %>% filter()
 
