@@ -13,6 +13,8 @@ introduction <- NR(
 
 ### Launch simulations
 
+source(file = "Refactoring/Fonctions/launch_estimation.R")
+
 intro_imput <- launch_all_estimations(
   object = introduction,
   dates = date_prediction,
