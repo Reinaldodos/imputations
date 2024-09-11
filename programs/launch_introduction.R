@@ -25,6 +25,8 @@ intro_imput <- launch_all_estimations(
 
 ### Launch distributions
 
+source(file = "Refactoring/Fonctions/launch_all_distributions.R")
+
 intro_ventil <- launch_all_distributions(
   object = introduction,
   input = input_object,
