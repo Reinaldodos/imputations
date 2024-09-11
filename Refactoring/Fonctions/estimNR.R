@@ -112,9 +112,10 @@ apply_method <- function(group_siren,
   siren_list <- group_siren$siren
   method_ref <- group_siren$method_ref[1]
   
-  do.call(
-    get(method_ref),
-    prepare_args_for_method(
+  # Construire et exécuter l'appel dynamiquement avec rlang::call2
+  call_expr <- rlang::call2(
+    .fn = rlang::sym(method_ref),  # Crée un symbole à partir de method_ref
+    !!!prepare_args_for_method(
       method_ref,
       flow,
       prediction_period,
@@ -125,6 +126,10 @@ apply_method <- function(group_siren,
       nb_learning_year
     )
   )
+  
+  # Évaluer l'appel avec eval
+  eval(call_expr)
+  
 }
 
 prepare_args_for_method <- function(method_ref,
