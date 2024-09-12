@@ -28,19 +28,25 @@ intro_imput <- launch_all_estimations(
 source(file = "Refactoring/Fonctions/launch_all_distributions.R")
 
 intro_ventil <- launch_all_distributions(
-  object = introduction,
-  input = input_object,
+  output_directory = output_directory,
+  flow_name = "intro",
+  endo_name = "vart",
   imput_result = intro_imput,
   dates = date_prediction,
   detail_data = detail_intro
 )
 
-
 ### Add previous months
 
-intro_imput_with_past_month <- add_historical_simulation(introduction, input_object, intro_imput, type = "imput")
+intro_imput_with_past_month <- add_historical_simulation(introduction, 
+                                                         input_object,
+                                                         intro_imput,
+                                                         type = "imput")
 
-intro_ventil_with_past_month <- add_historical_simulation(introduction, input_object, intro_ventil, type = "ventil")
+intro_ventil_with_past_month <- add_historical_simulation(introduction,
+                                                          input_object,
+                                                          intro_ventil,
+                                                          type = "ventil")
 
 
 ### Add gazelec file
@@ -80,12 +86,6 @@ date_prediction %>%
       sprintf(imput_filename_format, "intro", "%s")
     )
   ))
-# date_prediction %>%
-#   map(~export_imput_to_csv(
-#     data = intro_imput_rect, date = .x,
-#     filename_format = file.path(output_freenas_directory,
-#                                 sprintf(imput_filename_format, "intro", "%s"))
-#   ))
 
 intro_ventil_rect <- remove_msd(
   object = introduction,
@@ -96,14 +96,8 @@ intro_ventil_rect <- remove_msd(
 )
 export_ventil_to_csv(intro_ventil_rect,
                      filename = file.path(output_directory,
-                                          sprintf(ventil_filename_format, "intro")))
-# export_ventil_to_csv(intro_ventil_rect,
-#                      filename = file.path(output_freenas_directory,
-#                                           sprintf(ventil_filename_format, "intro")))
-
-# historical_basis <- export_to_historical_basis(input_object, intro_ventil_rect,
-#                                                "intro", save = T)
-
+                                          sprintf(ventil_filename_format,
+                                                  "intro")))
 remove(
   introduction,
   endogenous_intro,
