@@ -16,10 +16,10 @@ introduction <- NR(
 source(file = "Refactoring/Fonctions/launch_estimation.R")
 
 intro_imput <- launch_all_estimations(
-  object = introduction,
+  flow_name = "intro",
   dates = date_prediction,
   sample = sample_intro,
-  input = input_object,
+  output_directory = output_directory,
   learning_from = learning_from,
   nb_years_regressions = nb_years_regressions
 )
