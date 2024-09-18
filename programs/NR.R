@@ -1072,47 +1072,6 @@ setMethod(
   }
 )
 
-setGeneric(
-  name = "launch_all_distributions",
-  def = function(object,
-                 input,
-                 imput_result,
-                 dates,
-                 detail_data) {
-    standardGeneric("launch_all_distributions")
-  }
-)
-setMethod(
-  f = "launch_all_distributions",
-  signature = "NR",
-  definition = function(object,
-                        input,
-                        imput_result,
-                        dates,
-                        detail_data) {
-    flow_name <- get_flow_name_register(object)
-    filename <- file.path(input@output_directory,
-                          sprintf("%s_ventil.rds", flow_name))
-    if (file.exists(filename)) {
-      distribution_data <- readRDS(filename)
-    } else{
-      distribution_data <- dates %>%
-        map_df(
-          ~ launch_distribution(
-            object = object,
-            input = input,
-            imput_result = imput_result,
-            date = .x,
-            detail_data = detail_data
-          )
-        ) %>%
-        bind_rows()
-      saveRDS(distribution_data,
-              filename)
-    }
-    return(distribution_data)
-  }
-)
 
 ##################################
 ### Add historical simulations ###
