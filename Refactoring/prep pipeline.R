@@ -18,30 +18,6 @@ import_ca3(
 
 gc(full = TRUE)
 
-# ETL detail --------------------------------------------------------------
-
-source(file = "Refactoring/Fonctions/import_detail.R",
-       encoding = "UTF-8")
-
-import_detail(source_file = intro_ventil_file,
-                delete_data = delete, 
-                condition = "payp %notin% c('XU', 'GB')"
-  ) %>% 
-  arrow::write_feather(sink = file.path(
-    pipeline_directory,
-    "detail_intro.arrow"
-  ))
-
-import_detail(source_file = exped_ventil_file,
-                delete_data = delete,
-                condition = "pyod %notin% c('XU', 'GB')") %>% 
-  arrow::write_feather(sink = file.path(
-    pipeline_directory,
-    "detail_exped.arrow"
-  ))
-
-gc(full = TRUE)
-
 # ETL endogenous ----------------------------------------------------------
 
 source(file = "Refactoring/Fonctions/import_endogenous.R",
