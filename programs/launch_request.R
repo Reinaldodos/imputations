@@ -19,7 +19,7 @@ my_bdd <-
 # lecture lazy
 data <- tbl(my_bdd, in_schema("sc_astrineo", "florea"))
 
-# fonction requete
+# fonction requete -------------------------------------------------------------
 GroupFiltreSum <- function(data,
                            fichier,
                             grouping_var,
@@ -44,7 +44,6 @@ GroupFiltreSum <- function(data,
            imex %in% flux,
            oblig %in% type,
            regdem %in% regime,
-           # sire %in% c("056802218","056806813","056807290","056809957","531597128"),
            vaco %in% td
            ) %>% 
     group_by(across({{grouping_var}})) %>%  
@@ -52,12 +51,18 @@ GroupFiltreSum <- function(data,
     rename(siren = sire) %>% 
     collect()
   
+  table = table %>% mutate(period = make_date(
+    year = adep,
+    month = mdep,
+    day = 1
+  )) %>% select(-adep,-mdep)
+  
   saveRDS(table,paste0(fichier,".rds")) #enregistrer ou pas, dans ETL ?
   
   return(table)
 }
 
-# Parmètres des requetes
+# Parmètres des requetes -------------------------------------------------------
 RequeteParams = function(date_ref) {
   ER_exped = list(
     fichier = "ER_exped",
@@ -136,8 +141,15 @@ RequeteParams = function(date_ref) {
   return (meta_liste)
 }
 
+
+
+############### Lancer les extractions ######################################### 
+
+
 # Lancer à partir de la date de référence
 date_ref= as.Date("2024-07-01")
+
+
 liste_requete = RequeteParams(date_ref = date_ref)
 
 start = Sys.time()
@@ -156,47 +168,6 @@ mes_requetes = liste_requete %>%
 Sys.time() - start
 
 
-MakeDate = function(data){
-  data = data %>% mutate(period = make_date(
-    year = adep,
-    month = mdep,
-    day = 1
-  )) %>% select(-adep,-mdep)
-return(data)
-}
-
-liste_tb = liste_table %>% map(~ MakeDate(.))
-
 list2env(mes_requetes, envir = .GlobalEnv)
 
-LIRE_TOUT= function(filepaths){
-  filepaths <-
-    filepaths %>% set_names(nm = basename(.) %>% tools::file_path_sans_ext())
-  files <- invisible(purrr::map(filepaths, rio::import))
-  invisible(purrr::pmap(
-    .l = list(.x = names(files), .y = files),
-    .f = ~ assign(.x, .y, envir = .GlobalEnv)
-  ))
-}
-filepaths <- list.files("sorties_test/",full.names = TRUE, recursive = TRUE, pattern = "*.rds") 
-LIRE_TOUT_liste(filepaths = 
-            filepaths)
-LIRE_TOUT_liste= function(filepaths){
-  filepaths <-
-    filepaths %>% set_names(nm = basename(.) %>% tools::file_path_sans_ext())
-  files <- invisible(purrr::map(filepaths, rio::import))
-
-}
-
-endogenous_expedH=endogenous_exped_histo %>%
-  filter(period >= (date_ref - years(11)) &
-           period <= (date_ref - years(4) - months(1)))
-
-endogenous_introH=endogenous_intro_histo %>%
-  filter(period >= (date_ref - years(11)) &
-           period <= (date_ref - years(4) - months(1)))
-
-# voir=endogenous_introH %>% distinct(period) %>% arrange(period)
-
-endo_intro = intro_imput %>% filter()
 
