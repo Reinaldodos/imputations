@@ -101,16 +101,18 @@ exogenous_intro <-
 detail_intro <- 
   file.path(
     pipeline_directory,
-    "detail_intro.arrow"
+    "detail_intro"
   ) %>%
-  arrow::read_feather()
+  arrow::open_dataset() %>% 
+  collect()
 
 detail_exped <-
   file.path(
     pipeline_directory,
-    "detail_exped.arrow"
+    "detail_exped"
   ) %>%
-  arrow::read_feather()
+  arrow::open_dataset() %>% 
+  collect()
 
 endogenous_intro <-
   file.path(

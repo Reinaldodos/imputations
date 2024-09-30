@@ -75,15 +75,15 @@ source(file = "Refactoring/Fonctions/import_detail.R",
 import_detail(source_file = intro_ventil_file,
               delete_data = delete,
               condition = "payp %notin% c('XU', 'GB')") %>%
-  arrow::write_feather(sink = file.path(pipeline_directory,
-                                        "detail_intro.arrow"))
+  divRmethodo::write_to_parquet_optimal(path = file.path(pipeline_directory,
+                                                         "detail_intro"))
+
+gc(full = TRUE)
 
 import_detail(source_file = exped_ventil_file,
                 delete_data = delete,
                 condition = "pyod %notin% c('XU', 'GB')") %>% 
-  arrow::write_feather(sink = file.path(
-    pipeline_directory,
-    "detail_exped.arrow"
-  ))
+  divRmethodo::write_to_parquet_optimal(path = file.path(pipeline_directory,
+                                                         "detail_exped"))
 
 gc(full = TRUE)
