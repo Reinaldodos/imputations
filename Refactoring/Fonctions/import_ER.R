@@ -33,10 +33,10 @@ rename_siren_new <- function(data) {
 import_ER <- function(ER_file, delete_data) {
   ER_file %>%
     data_treatment(
-      files = ER_file$files,
+      file = ER_file$files,
       total_variable = "sire",
       rename_list = c("siren" = "sire"),
-      filter_condition = "regdem == '21'"
+      "regdem == '21'"
     ) %>%
     left_join(y = delete_data, by = join_by(siren)) %>%
     mutate_siren_vfte() %>%
