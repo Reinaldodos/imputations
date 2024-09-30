@@ -12,3 +12,5 @@ output_PC/*
 *.rds
 *.arrow
 output.txt
+pipeline
+estimation_distribution
