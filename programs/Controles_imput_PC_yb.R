@@ -303,9 +303,9 @@ histo_rev <- Base_historique %>%
   distinct(siren,period,prediction,mois_ref,source,flux) %>% 
   filter(source=="chiffre") %>% 
   group_by(period,mois_ref,source,flux) %>% 
-  summarise(montant_imput=sum(prediction,na.rm=T)) %>% 
+  summarise(montant_imput=sum(prediction,na.rm=T),
+            .groups = "drop") %>% 
   pivot_wider(names_from=mois_ref, values_from = montant_imput,names_prefix="chiffre_") %>% 
-  ungroup() %>% 
   select(-c(source))
 
 revisions_intro <- revis_lastm(ventil_intro, histo_rev  %>% filter(flux=="intro"))

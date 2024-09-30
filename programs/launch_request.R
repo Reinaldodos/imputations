@@ -18,10 +18,14 @@ WriteCommand <- function(from, to, type){
     mutate(month_command = sprintf("mdep in (%s)", paste("'", mdep, "'", collapse = ", ", sep = ""))) %>%
     ungroup() %>%
     group_by(month_command) %>%
-    summarise(command = sprintf("((adep in (%s)) and (%s))", 
-                                paste("'", unique(adep), "'", collapse = ", ", sep = ""), 
-                                month_command)) %>%
-    ungroup() %>%
+    summarise(
+      command = sprintf(
+        "((adep in (%s)) and (%s))",
+        paste("'", unique(adep), "'", collapse = ", ", sep = ""),
+        month_command
+      ),
+      .groups = "drop"
+    ) %>% 
     select(command) %>%
     unique() %>%
     flatten_chr() %>%

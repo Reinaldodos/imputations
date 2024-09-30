@@ -672,7 +672,8 @@ setMethod(
           &
             (UQ(
               sym(object@endo_name)
-            ) > 0)))
+            ) > 0)),
+          .groups = "drop")
           %>% mutate(method_ref = case_when(
             (nobs >= 12 * nb_learning_year) ~ 'launch_sarima',
             TRUE ~ 'taking_last_year'
@@ -719,7 +720,8 @@ setMethod(
             &
               (UQ(
                 sym(object@endo_name)
-              ) > 0)))
+              ) > 0)),
+            .groups = "drop")
             %>% mutate(
               method_ref = case_when(
                 (nobs >= 12 * nb_learning_year) ~ 'launch_sarima',
@@ -742,14 +744,16 @@ setMethod(
               object@exogenous[object@exogenous$siren %in% siren, ],
               by = c('siren', 'period')
             )
-            %>% group_by(siren) %>% summarise(notna_exog = sum((
+            %>% group_by(siren) %>% 
+              summarise(notna_exog = sum((
               is.na(UQ(sym(
                 object@exog_name
               ))) == FALSE
             )),
             nobs = sum(period < (
               ymd(min(prediction_period)) - years(1)
-            )))
+            )),
+            .groups = "drop")
             %>% mutate(
               method_ref = case_when(
                 ((nobs == 0) & (notna_exog > 0)) ~ 'taking_exog',
@@ -976,10 +980,10 @@ setMethod(
     distribution <-
       (data_distribution[data_distribution$siren %in% selected_sirens, ]
        %>% group_by_at(.vars = group)
-       %>% summarise(endo = sum(UQ(
-         sym(object@endo_name)
-       ),
-       na.rm = TRUE)))
+       %>% summarise(endo = sum(UQ(sym(object@endo_name)),
+                                na.rm = TRUE),
+                     .groups = "drop")
+       )
     # print(names(distribution))
     distribution <- (
       distribution
@@ -991,7 +995,8 @@ setMethod(
     dist <- (
       distribution
       %>% group_by(siren)
-      %>% summarise(period = unique(period))
+      %>% summarise(period = unique(period),
+                    .groups = "drop")
       %>% rbind(estim_result[, c('siren', 'period')])
       %>% arrange(siren, period)
       %>% group_by(siren)
@@ -1023,9 +1028,11 @@ setMethod(
     if (is.null(ventil_output)) {
       return(dist_prediction)
     } else{
-      return(dist_prediction
-             %>% group_by_(.dots = c('period', ventil_output))
-             %>% summarise(dist_prediction = sum(dist_prediction, na.rm = TRUE)))
+      dist_prediction %>% 
+        group_by_(.dots = c('period', ventil_output)) %>%
+        summarise(dist_prediction = sum(dist_prediction, na.rm = TRUE),
+                  .groups = "drop") %>%
+        return()
     }
   }
 )
@@ -1133,7 +1140,8 @@ setMethod(
             summarise(
               method = unique(method),
               method_ref = unique(method_ref),
-              prediction = sum(unique(prediction))
+              prediction = sum(unique(prediction)),
+              .groups = "drop"
             ),
           current_result
         )
@@ -1206,9 +1214,9 @@ setMethod(
               summarise(
                 method = unique(method),
                 method_ref = unique(method_ref),
-                prediction = unique(prediction)
-              ) %>%
-              ungroup()
+                prediction = unique(prediction),
+                .groups = "drop"
+              )
           )
         }
       } else if (type == "ventil") {
@@ -1351,14 +1359,16 @@ get_NR_list_from_result <- function(result_intro, result_exped) {
   NR_list <- bind_rows(
     result_intro %>%
       group_by(siren, period) %>%
-      summarise(count = n()) %>%
-      ungroup() %>%
+      summarise(count = n(),
+                .groups = "drop"
+      ) %>%
       select(siren, period) %>%
       mutate(flow = "I"),
     result_exped %>%
       group_by(siren, period) %>%
-      summarise(count = n()) %>%
-      ungroup() %>%
+      summarise(count = n(),
+                .groups = "drop"
+      ) %>%
       select(siren, period) %>%
       mutate(flow = "E")
   ) %>%
