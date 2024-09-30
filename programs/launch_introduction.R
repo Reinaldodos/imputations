@@ -13,7 +13,7 @@ introduction <- NR(
 
 ### Launch simulations
 
-source(file = "Refactoring/Fonctions/launch_estimation.R")
+source(file = "Refactoring/Fonctions/launch_all_estimations.R")
 
 intro_imput <- launch_all_estimations(
   flow_name = "intro",
@@ -23,7 +23,6 @@ intro_imput <- launch_all_estimations(
   learning_from = learning_from,
   nb_years_regressions = nb_years_regressions
 )
-
 
 ### Launch distributions
 
