@@ -128,8 +128,6 @@ endogenous_exped <-
   ) %>%
   arrow::read_feather()
 
-# ER <- import_ER(input_object)
-  
 ER <-
   file.path(
     pipeline_directory,
