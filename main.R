@@ -3,8 +3,8 @@ options(scipen = 999)
 
 purrr::walk(
   .x = c(
+    "programs/NR.R",
     "config.R"
-    # "programs/NR.R",
     # "programs/Production.R",
     # "programs/CNIV.R"
   ),
