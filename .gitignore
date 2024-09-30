@@ -12,3 +12,4 @@ output_PC/*
 *.rds
 *.arrow
 output.txt
+pipeline/*
