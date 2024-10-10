@@ -13,4 +13,5 @@ output_PC/*
 *.arrow
 output.txt
 ETL/*
+pipeline/*
 analyses/*
