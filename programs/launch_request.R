@@ -1,119 +1,173 @@
-library(RPostgreSQL)
-library(doParallel)
+pacman::p_load(tidyverse,dbplyr)
 
-user = "ngle_pp"
-pwd = "TFscCizOdV1jO31OBjCu"
+fichier_config <-
+  file.path("Z:",
+            "DG_STAT_prive",
+            "1_ETUDES et METHODES",
+            "R",
+            "Liste credentials.yml")
+utilisateur <- "Léa"
 
-unregister_dopar <- function() {
-  env <- foreach:::.foreachGlobals
-  rm(list=ls(name=env), pos=env)
-}
 
-WriteCommand <- function(from, to, type){
-  period <- seq.Date(from = from, to = to, by = 'month') %>%
-    as_tibble() %>%
-    mutate(adep = format(value, "%Y"), 
-           mdep = format(value, "%m")) %>%
-    group_by(adep) %>%
-    mutate(month_command = sprintf("mdep in (%s)", paste("'", mdep, "'", collapse = ", ", sep = ""))) %>%
-    ungroup() %>%
-    group_by(month_command) %>%
-    summarise(
-      command = sprintf(
-        "((adep in (%s)) and (%s))",
-        paste("'", unique(adep), "'", collapse = ", ", sep = ""),
-        month_command
-      ),
-      .groups = "drop"
-    ) %>% 
-    select(command) %>%
-    unique() %>%
-    flatten_chr() %>%
-    paste("(", ., ")", collapse = " or ", sep = "")
-  
-  dict <- data.frame(
-    type = c("intro_imput", "intro_ventil", "exped_imput", "exped_ventil", "ER_exped", "vin-spiritueux"), 
-    var = c("sire, adep, mdep", 
-            "sire, adep, mdep, a129, nc8, payp, pyod, dept, regdem, temo, natr, conf", 
-            "sire, adep, mdep, regdem", 
-            "sire, adep, mdep, a129, nc8, payp, pyod, dept, regdem, temo, natr, conf", 
-            "sire, adep, mdep, regdem", 
-            "sire, adep, mdep, ngp, nc8, imex, case when imex in ('1', '3') then 'I' else 'E' end flux"),
-    var_group_by = c("sire, adep, mdep", 
-                     "sire, adep, mdep, a129, nc8, payp, pyod, dept, regdem, temo, natr, conf", 
-                     "sire, adep, mdep, regdem", 
-                     "sire, adep, mdep, a129, nc8, payp, pyod, dept, regdem, temo, natr, conf", 
-                     "sire, adep, mdep, regdem", 
-                     "sire, adep, mdep, ngp, nc8, imex, case when imex in ('1', '3') then 'I' else 'E' end"),
-    agg_var = c("vart", "vart", "vart", "vart", "vart, vfte", 
-                "vart, usup") 
-  ) %>%
-    mutate(condition = case_when(
-      (grepl(pattern = "intro", x = type)) ~ "(imex = '3') and (oblig = '1') and (vaco in ('1', '3'))", 
-      (grepl(pattern = "imput", x = type) | grepl(pattern = "ventil", x = type)) ~ "(imex = '4') and (oblig = '1') and (vaco in ('1', '3'))", 
-      (grepl(pattern = "ER", x = type)) ~ "(oblig = '4') and (regdem = '21')", 
-      TRUE ~ "((nc8 like '2204%') or (nc8 like '2208%')) and (vaco in ('1','3'))"
-    ))
-  var <- dict[dict$type == type,]$var
-  var_group_by <- dict[dict$type == type,]$var_group_by
-  agg_var <- dict[dict$type == type,]$agg_var %>% str_split(", ") %>% flatten_chr()
-  condition <- dict[dict$type == type,]$condition
-  command <- sprintf(
-    "select %s, %s from sc_astrineo.florea where ((%s) and %s) group by %s", 
-    var, 
-    paste(sprintf("sum(%s) %s", agg_var, agg_var), collapse = ", "), 
-    period, 
-    condition, 
-    var_group_by
+my_bdd <- 
+  divRmethodo::connexion_base_etudes(
+    fichier_config = fichier_config,
+    utilisateur = utilisateur
   )
-  return(command)
+
+
+# lecture lazy
+data <- tbl(my_bdd, in_schema("sc_astrineo", "florea"))
+
+# fonction requete -------------------------------------------------------------
+GroupFiltreSum <- function(data,
+                           fichier,
+                            grouping_var,
+                            column_name,
+                            type,
+                            td,
+                            flux,
+                            annee,
+                            regime,
+                            liste_mois,
+                            cniv) {
+  
+  if(cniv == TRUE){
+  data = data %>% filter(str_sub(nc8,1,4) %in% c("2204","2208"))
+  }
+  else{
+  data = data
+  }
+    
+  table = data %>%
+    filter(adep %in% annee,
+           imex %in% flux,
+           oblig %in% type,
+           regdem %in% regime,
+           vaco %in% td
+           ) %>% 
+    group_by(across({{grouping_var}})) %>%  
+    summarise(across({{column_name}}, \(x) sum(x, na.rm = TRUE)),.groups = "drop") %>% 
+    rename(siren = sire) %>% 
+    collect()
+  
+  table = table %>% mutate(period = make_date(
+    year = adep,
+    month = mdep,
+    day = 1
+  )) %>% select(-adep,-mdep)
+  
+  saveRDS(table,paste0(fichier,".rds")) #enregistrer ou pas, dans ETL ?
+  
+  return(table)
 }
 
-request_data <-  bind_rows(
-  intro_imput_file %>%
-    subset(subset = !historical, select = -c(historical, astrineo_input, skiprows, encoding, dec)), 
-  exped_imput_file %>%
-    subset(subset = !historical, select = -c(historical, astrineo_input, skiprows, encoding, dec)), 
-  intro_ventil_file %>% select(-astrineo_input, skiprows, encoding, dec), 
-  exped_ventil_file %>% select(-astrineo_input, skiprows, encoding, dec),
-  ER_file %>% select(-c(skiprows, encoding, dec)), 
-  cniv_file %>% subset(subset = (type == "input"), select = c(directory, files, start, end))
-) %>% 
-  rowwise() %>%
-  mutate(
-  command = WriteCommand(start, end, (str_split(files, "_20") %>% flatten_chr())[1])
-) %>%
-  ungroup()
+# Parmètres des requetes -------------------------------------------------------
+RequeteParams = function(date_ref) {
+  ER_exped = list(
+    fichier = "ER_exped",
+    grouping_var = c("sire", "adep", "mdep", "regdem"),
+    column_name = c("vart", "vfte"),
+    type = c("4"),
+    flux = c("4"),
+    td = c("0"),
+    regime = c("21"),
+    annee = as.character(year(seq(date_ref - months(2), date_ref, by = "year"))),
+    cniv=FALSE
+  )
+  exped_imput = list(
+    fichier = "exped_imput",
+    grouping_var = c("sire", "adep", "mdep","regdem"),
+    column_name = c("vart"),
+    type = c("1"),
+    flux = c("4"),
+    td = c("1", "3"),
+    regime = c("21","29"),
+    annee = as.character(year(seq(date_ref - months(48), date_ref, by = "year"))),
+    cniv=FALSE
+  )
+  exped_ventil = list(
+    fichier = "exped_ventil",
+    grouping_var = c( "sire", "adep", "mdep", "a129", "nc8", "payp", "pyod", "dept", "regdem", "temo", "natr", "conf"),
+    column_name = c("vart"),
+    type = c("1"),
+    flux = c("4"),
+    td = c("1", "3"),
+    regime = c("21","29"),
+    annee = as.character(year(seq(date_ref - months(24), date_ref, by = "year"))),
+    cniv=FALSE
+  )
+  intro_imput = list(
+    fichier = "intro_imput",
+    grouping_var = c("sire", "adep", "mdep"),
+    column_name = c("vart"),
+    type = c("1"),
+    flux = c("3"),
+    td = c("1", "3"),
+    regime = c("11","19"),
+    annee = as.character(year(seq(date_ref - months(48), date_ref, by = "year"))),
+    cniv=FALSE
+  )
+  intro_ventil = list(
+    fichier = "intro_ventil",
+    grouping_var = c( "sire", "adep", "mdep", "a129", "nc8", "payp", "pyod", "dept", "regdem", "temo", "natr", "conf"),
+    column_name = c("vart"),
+    type = c("1"),
+    flux = c("3"),
+    td = c("1", "3"),
+    regime = c("11","19"),
+    annee = as.character(year(seq(date_ref - months(24), date_ref, by = "year"))),
+    cniv=FALSE
+  )
+  vin_spiritueux = list(
+    fichier = "vin_spiritueux",
+    grouping_var = c( "sire", "adep","regdem", "mdep", "ngp", "nc8"),
+    column_name = c("vart","usup"),
+    type = c("1","4"),
+    flux = c("1","2","3","4"),
+    td = c("1", "3"),
+    regime = c("11","19","21","29"),
+    annee = as.character(year(seq(date_ref - months(12), date_ref, by = "year"))),
+    cniv = TRUE
+  )
+  
+ 
+  meta_liste = list(ER_exped = ER_exped, 
+                    exped_imput = exped_imput,
+                    exped_ventil = exped_ventil,
+                    intro_imput = intro_imput,
+                    intro_ventil = intro_ventil,
+                    vin_spiritueux = vin_spiritueux)
+  return (meta_liste)
+}
 
-cl <- makeCluster(5, outfile = 'output.txt')
-registerDoParallel(cl)
-start_time <- Sys.time()
-foreach(irow = 1:nrow(request_data), 
-        .packages = c('dplyr', 'RPostgreSQL')) %dopar% 
-  {
-    connexion <- dbConnect(PostgreSQL(), dbname = "db_etudes", port = 5440,
-                           host="dxproetudba01.adm.dnsce.douane",
-                           user = user, password = pwd)
-    file_name <- file.path(request_data[irow,]$directory, 
-                           request_data[irow,]$files)
-    data <- dbGetQuery(conn = connexion, statement = sql(request_data[irow,]$command))
-    if (grepl(pattern = "vin-spiritueux", x = request_data[irow,]$files)){
-      data <- data %>% 
-        group_by(sire, adep, mdep, ngp, nc8, imex) %>%
-        mutate(vart_e = sum(vart[flux == "E"]), 
-               vart_i = sum(vart[flux == "I"]), 
-               usup_e = sum(usup[flux == "E"]), 
-               usup_i = sum(usup[flux == "I"])) %>%
-        ungroup() %>%
-        select(-vart, -usup)
-    }
-    dbDisconnect(connexion)
-    write.csv2(data,
-               file = file_name,
-               row.names = F, 
-               quote = F, 
-               na = "")
-  }
-stopCluster(cl)
-print(Sys.time() - start_time)
-unregister_dopar()
+
+
+############### Lancer les extractions ######################################### 
+
+
+# Lancer à partir de la date de référence
+date_ref= as.Date("2024-07-01")
+
+
+liste_requete = RequeteParams(date_ref = date_ref)
+
+start = Sys.time()
+mes_requetes = liste_requete %>% 
+  map( ~ GroupFiltreSum(
+           fichier = .$fichier,
+           annee = .$annee,
+           flux = .$flux,
+           type = .$type,
+           grouping_var = .$grouping_var,
+           column_name = .$column_name,
+           td = .$td,
+           regime=.$regime,
+           cniv = .$cniv,
+    data = data)) 
+Sys.time() - start
+
+
+list2env(mes_requetes, envir = .GlobalEnv)
+
+
