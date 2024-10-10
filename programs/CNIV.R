@@ -29,11 +29,15 @@ setMethod(f = "response_median_predict",
                 filtered_data <- filter_(object@data, 
                                          interp(~var %in% product_list, var = prdocut_var)) %>%
                   group_by_(.dots = c('flow', 'siren', 'period', product_var)) %>%
-                  summarise(vart = sum(vart), usup = sum(usup))
+                  summarise(vart = sum(vart),
+                            usup = sum(usup),
+                            .groups = "drop")
               }else{
                 filtered_data <- object@data %>%
                   group_by_(.dots = c('flow', 'siren', 'period', product_var)) %>%
-                  summarise(vart = sum(vart), usup = sum(usup))
+                  summarise(vart = sum(vart),
+                            usup = sum(usup),
+                            .groups = "drop")
               }
             }
             
@@ -53,15 +57,16 @@ setMethod(f = "response_median_predict",
                                                   ((year(period) == year(as_date(date))) &
                                                      (period < as_date(date)))))) %>%
                 group_by_(.dots = c(product_var, "siren", "flow")) %>%
-                summarise(period = as_date(date)) %>%
+                summarise(period = as_date(date),
+                          .groups = "drop") %>%
                 full_join(
                   response %>%
                     group_by_(.dots = c(product_var, "period", "flow")) %>%
                     summarise(
                       # vart_by_response = sum(vart) / n_distinct(siren), 
                       vart_by_response = median(vart),
-                      usup_vart_ratio = sum(usup) / sum(vart)
-                    ), 
+                      usup_vart_ratio = sum(usup) / sum(vart),
+                      .groups = "drop"), 
                   by = c(product_var, 'period', 'flow')
                 ) %>%
                 semi_join(NR_list, by = c('siren', 'flow', 'period')) %>%
@@ -70,7 +75,8 @@ setMethod(f = "response_median_predict",
                 group_by_(.dots = c(product_var, "period", "flow")) %>%
                 summarise(vart_NR_prediction = sum(vart_by_response, na.rm = T), 
                           usup_NR_prediction = vart_NR_prediction*unique(usup_vart_ratio), 
-                          nb_NR = n_distinct(siren, na.rm = T))
+                          nb_NR = n_distinct(siren, na.rm = T),
+                          .groups = "drop")
               estimation <- rbind(estimation, prediction)
             }
             return(estimation)
@@ -107,8 +113,8 @@ compute_coverage <- function(response_data,
       summarise(
         `Val.(euros)` = sum(vart),
         `Vol.(litre)` = sum(usup),
-        `*R` = n_distinct(siren)
-      ) %>%
+        `*R` = n_distinct(siren),
+        .groups = "drop") %>%
       pivot_wider(
         names_from = type_enquete,
         values_from = c(`Val.(euros)`, `Vol.(litre)`, `*R`),
@@ -149,7 +155,8 @@ compute_coverage <- function(response_data,
       )) &
         (flow == f))) %>%
       group_by_(.dots = c('type_enquete', v)) %>%
-      summarise(vart = sum(vart), usup = sum(usup)) %>%
+      summarise(vart = sum(vart), usup = sum(usup),
+                .groups = "drop") %>%
       pivot_wider(
         names_from = type_enquete,
         values_from = c(vart, usup),
@@ -170,7 +177,8 @@ compute_coverage <- function(response_data,
                         & (NR_list$flow == f), ],
                 by = c('siren', 'period' = 'last_period', 'imex')) %>%
       group_by_(.dots = c('type_enquete', v)) %>%
-      summarise(vart = sum(vart), usup = sum(usup)) %>%
+      summarise(vart = sum(vart), usup = sum(usup),
+                .groups = "drop") %>%
       pivot_wider(
         names_from = type_enquete,
         values_from = c(vart, usup),

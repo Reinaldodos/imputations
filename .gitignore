@@ -7,8 +7,10 @@ data/*
 historique/*
 cniv/*
 input/*
+output_C/*
 output_PC/*
 *.rds
+*.arrow
 output.txt
 ETL/*
 analyses/*

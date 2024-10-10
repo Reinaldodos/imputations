@@ -1,7 +1,3 @@
-endogenous_exped <- import_endogenous(input_object, "E")
-ER <- import_ER(input_object)
-detail_exped <- import_detail(input_object, "E", "pyod %notin% c('XU', 'GB')")
-
 
 ### Create expedition objects
 
@@ -45,16 +41,6 @@ exped_imput <- full_join(
     method_ref = ifelse(is.na(method_ref_21), method_ref_29, method_ref_21)
   ) %>%
   select(siren, period, method, method_ref, prediction)
-# exped_imput <- bind_rows(
-#   exped_imput_29 %>% mutate(regdem = 29), 
-#   exped_imput_21 %>% mutate(regdem = 21)
-# ) %>% 
-#   group_by(siren, period) %>%
-#   summarise(prediction = sum(prediction), 
-#             method = case_when(
-#               is.na(method)
-#             ))
-
 
 ### Launch distributions
 

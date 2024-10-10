@@ -63,9 +63,9 @@ setMethod(f = "GetEurostatSH2Format",
           })
 
 setGeneric(name = "GetEurostatCTCIFormat",
-          def = function(object, filename, exclu){
-            standardGeneric("GetEurostatCTCIFormat")
-          })
+           def = function(object, filename, exclu){
+             standardGeneric("GetEurostatCTCIFormat")
+           })
 setMethod(f = "GetEurostatCTCIFormat",
           signature = "Production",
           definition = function(object, filename, exclu){
