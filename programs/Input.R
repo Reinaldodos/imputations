@@ -224,6 +224,50 @@ get_sample_by_flow <- function(sample, flow) {
     return()
 }
 
+setGeneric(
+  name = "import_delete",
+  def = function(object, pattern = "suppressions") {
+    standardGeneric("import_delete")
+  }
+)
+setMethod(
+  f = "import_delete",
+  signature = "Input",
+  definition = function(object, pattern = "suppressions") {
+    if (!file.exists(file.path(object@input_directory, "delete.rds"))) {
+      delete_data_initial <- readRDS(file.path(object@historical_directory, "delete.rds"))
+      delete_data <- readRDS(file.path(
+        last(object@sample$directory),
+        "removing_list.rds"
+      )) %>%
+        mutate(siren_repreneur = str_sub(str_replace_all(tva_repreneur, pattern = " ", replacement = ""), -9, -1)) %>%
+        group_by(siren) %>%
+        mutate(n_repreneur = n_distinct(siren_repreneur)) %>%
+        ungroup() %>%
+        mutate(ratio = 1 / n_repreneur) %>%
+        select(siren, siren_repreneur, ratio)
+
+      delete_data <- bind_rows(
+        anti_join(delete_data_initial,
+          delete_data,
+          by = "siren"
+        ),
+        delete_data
+      )
+      saveRDS(
+        delete_data,
+        file.path(object@historical_directory, "delete.rds")
+      )
+
+      saveRDS(delete_data, file.path(object@input_directory, "delete.rds"))
+    } else {
+      delete_data <- readRDS(file.path(object@input_directory, "delete.rds"))
+    }
+    return(delete_data)
+  }
+)
+
+
 # ===============================================================================
 # Import endogenous
 # ===============================================================================
@@ -372,6 +416,80 @@ setMethod(
       )
     }
     return(imput_data)
+  }
+)
+
+
+# ===============================================================================
+# Import ventil
+# ===============================================================================
+
+setGeneric(
+  name = "import_detail",
+  def = function(object, flow, condition) {
+    standardGeneric("import_detail")
+  }
+)
+setMethod(
+  f = "import_detail",
+  signature = "Input",
+  definition = function(object, flow, condition) {
+    flow_dict <- data.frame(
+      flow = c("E", "I"),
+      flow_name = c("exped", "intro")
+    )
+    flow_name <- flow_dict[flow_dict$flow == flow, ]$flow_name
+    filename <- sprintf("detail_%s.rds", flow_name)
+    if (!file.exists(file.path(object@input_directory, filename))) {
+      delete_data <- import_delete(object = object)
+      source_file <- slot(
+        object,
+        sprintf("%s_ventil", flow_name)
+      )
+      detail_data <- source_file$files %>%
+        map_df(
+          ~ data_treatment(
+            source_file = source_file,
+            file = .x,
+            rename_list = c("siren" = "sire"),
+            total_variable = "sire",
+            condition
+          )
+        ) %>%
+        bind_rows()
+      modified_data <- inner_join(
+        detail_data,
+        delete_data,
+        by = "siren"
+      ) %>%
+        mutate(
+          siren_new = ifelse(test = is.na(siren_repreneur),
+            yes = siren,
+            no = siren_repreneur
+          ),
+          vart_new = ifelse(test = is.na(ratio),
+            yes = vart,
+            no = vart * ratio
+          )
+        ) %>%
+        group_by(
+          siren_new, period, a129, nc8, payp, pyod,
+          dept, regdem, temo, natr, conf
+        ) %>%
+        summarise(vart = sum(vart_new),
+                  .groups = "drop") %>%
+        rename("siren" = "siren_new")
+      detail_data <- detail_data %>%
+        anti_join(delete_data, by = "siren") %>%
+        bind_rows(modified_data)
+      saveRDS(
+        detail_data,
+        file.path(object@input_directory, filename)
+      )
+    } else {
+      detail_data <- readRDS(file.path(object@input_directory, filename))
+    }
+    return(detail_data)
   }
 )
 
