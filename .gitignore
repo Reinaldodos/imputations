@@ -13,3 +13,4 @@ output_PC/*
 *.arrow
 output.txt
 pipeline/*
+*.zip

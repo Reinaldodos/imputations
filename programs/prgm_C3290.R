@@ -1,7 +1,7 @@
 library(tidyverse)
 library(rio)
 
-path_pass <- file.path(freenas_directory, "traitement non-réponse", "data")
+path_pass <- file.path(freenas_directory, "traitement non-rÃ©ponse", "data")
 path_imput <- output_directory
 
 ########################
