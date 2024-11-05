@@ -13,41 +13,32 @@ introduction <- NR(
 
 ### Launch simulations
 
-source(file = "Refactoring/Fonctions/launch_all_estimations.R")
-
 intro_imput <- launch_all_estimations(
-  flow_name = "intro",
+  object = introduction,
   dates = date_prediction,
   sample = sample_intro,
-  output_directory = output_directory,
+  input = input_object,
   learning_from = learning_from,
   nb_years_regressions = nb_years_regressions
 )
 
+
 ### Launch distributions
 
-source(file = "Refactoring/Fonctions/launch_all_distributions.R")
-
 intro_ventil <- launch_all_distributions(
-  output_directory = output_directory,
-  flow_name = "intro",
-  endo_name = "vart",
+  object = introduction,
+  input = input_object,
   imput_result = intro_imput,
   dates = date_prediction,
   detail_data = detail_intro
 )
 
+
 ### Add previous months
 
-intro_imput_with_past_month <- add_historical_simulation(introduction, 
-                                                         input_object,
-                                                         intro_imput,
-                                                         type = "imput")
+intro_imput_with_past_month <- add_historical_simulation(introduction, input_object, intro_imput, type = "imput")
 
-intro_ventil_with_past_month <- add_historical_simulation(introduction,
-                                                          input_object,
-                                                          intro_ventil,
-                                                          type = "ventil")
+intro_ventil_with_past_month <- add_historical_simulation(introduction, input_object, intro_ventil, type = "ventil")
 
 
 ### Add gazelec file
@@ -87,6 +78,12 @@ date_prediction %>%
       sprintf(imput_filename_format, "intro", "%s")
     )
   ))
+# date_prediction %>%
+#   map(~export_imput_to_csv(
+#     data = intro_imput_rect, date = .x,
+#     filename_format = file.path(output_freenas_directory,
+#                                 sprintf(imput_filename_format, "intro", "%s"))
+#   ))
 
 intro_ventil_rect <- remove_msd(
   object = introduction,
@@ -97,8 +94,14 @@ intro_ventil_rect <- remove_msd(
 )
 export_ventil_to_csv(intro_ventil_rect,
                      filename = file.path(output_directory,
-                                          sprintf(ventil_filename_format,
-                                                  "intro")))
+                                          sprintf(ventil_filename_format, "intro")))
+# export_ventil_to_csv(intro_ventil_rect,
+#                      filename = file.path(output_freenas_directory,
+#                                           sprintf(ventil_filename_format, "intro")))
+
+# historical_basis <- export_to_historical_basis(input_object, intro_ventil_rect,
+#                                                "intro", save = T)
+
 remove(
   introduction,
   endogenous_intro,

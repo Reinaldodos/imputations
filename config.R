@@ -11,7 +11,7 @@ c(
 
 # DATE ------------------------------------------------------
 
-date_ref <- as_date("2024-08-01")
+date_ref <- as_date("2024-09-01")
 nb_date_prediction <- 2
 first_publication_date <- as_date("2022-01-01")
 date_prediction <- seq.Date(
@@ -122,7 +122,7 @@ sample_file <- data.frame(
   directory = sample_directory, 
   files = c("2022_FE_1_2022M032EC-s5v18.csv",
             "2023_FE_4_8.5_20240115.csv",
-            "2024_FE_1_1.8_20240919.csv"), 
+            "2024_FE_2_1.2_20241016.csv"), 
   encoding = "UTF-8", 
   date_beg = date_sample,
   dec = ",",

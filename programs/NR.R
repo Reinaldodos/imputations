@@ -746,14 +746,14 @@ setMethod(
             )
             %>% group_by(siren) %>% 
               summarise(notna_exog = sum((
-              is.na(UQ(sym(
-                object@exog_name
-              ))) == FALSE
-            )),
-            nobs = sum(period < (
-              ymd(min(prediction_period)) - years(1)
-            )),
-            .groups = "drop")
+                is.na(UQ(sym(
+                  object@exog_name
+                ))) == FALSE
+              )),
+              nobs = sum(period < (
+                ymd(min(prediction_period)) - years(1)
+              )),
+              .groups = "drop")
             %>% mutate(
               method_ref = case_when(
                 ((nobs == 0) & (notna_exog > 0)) ~ 'taking_exog',
@@ -928,6 +928,55 @@ setMethod(
   }
 )
 
+setGeneric(
+  name = "launch_all_estimations",
+  def = function(object,
+                 dates,
+                 sample,
+                 input,
+                 learning_from,
+                 nb_years_regressions = 5,
+                 nbproc = 5) {
+    standardGeneric("launch_all_estimations")
+  }
+)
+setMethod(
+  f = "launch_all_estimations",
+  signature = "NR",
+  definition = function(object,
+                        dates,
+                        sample,
+                        input,
+                        learning_from,
+                        nb_years_regressions = 5,
+                        nbproc = 5) {
+    flow_name <- get_flow_name(object)
+    filename <- file.path(input@output_directory,
+                          sprintf("%s_imput.rds", flow_name))
+    if (file.exists(filename)) {
+      imput_data <- readRDS(filename)
+    } else{
+      imput_data <- dates %>%
+        map_df(
+          ~ launch_estimation(
+            object = object,
+            date = .x,
+            sample = sample,
+            input = input,
+            learning_from = learning_from,
+            nb_years_regressions = nb_years_regressions,
+            nbproc = nbproc
+          )
+        ) %>%
+        bind_rows()
+      saveRDS(imput_data,
+              filename)
+    }
+    return(imput_data)
+  }
+)
+
+
 ####################
 ### Distribution ###
 ####################
@@ -983,7 +1032,7 @@ setMethod(
        %>% summarise(endo = sum(UQ(sym(object@endo_name)),
                                 na.rm = TRUE),
                      .groups = "drop")
-       )
+      )
     # print(names(distribution))
     distribution <- (
       distribution
@@ -1079,6 +1128,47 @@ setMethod(
   }
 )
 
+setGeneric(
+  name = "launch_all_distributions",
+  def = function(object,
+                 input,
+                 imput_result,
+                 dates,
+                 detail_data) {
+    standardGeneric("launch_all_distributions")
+  }
+)
+setMethod(
+  f = "launch_all_distributions",
+  signature = "NR",
+  definition = function(object,
+                        input,
+                        imput_result,
+                        dates,
+                        detail_data) {
+    flow_name <- get_flow_name_register(object)
+    filename <- file.path(input@output_directory,
+                          sprintf("%s_ventil.rds", flow_name))
+    if (file.exists(filename)) {
+      distribution_data <- readRDS(filename)
+    } else{
+      distribution_data <- dates %>%
+        map_df(
+          ~ launch_distribution(
+            object = object,
+            input = input,
+            imput_result = imput_result,
+            date = .x,
+            detail_data = detail_data
+          )
+        ) %>%
+        bind_rows()
+      saveRDS(distribution_data,
+              filename)
+    }
+    return(distribution_data)
+  }
+)
 
 ##################################
 ### Add historical simulations ###
