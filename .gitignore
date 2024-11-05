@@ -11,6 +11,8 @@ output_C/*
 output_PC/*
 *.rds
 *.arrow
+*.parquet
 output.txt
 ETL/*
 analyses/*
+pipeline/*
