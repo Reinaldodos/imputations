@@ -1,6 +1,9 @@
 
 ### Create expedition objects
 
+source(file = "programs/NR.R",
+       encoding = "UTF-8")
+
 expedition_29 <- NR(
   # endogenous = endogenous_exped[,c('siren', 'period', 'vart_29')],
   endogenous = endogenous_exped,

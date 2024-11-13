@@ -3,10 +3,9 @@ options(scipen = 999)
 
 purrr::walk(
   .x = c(
-    "programs/NR.R",
-    "config.R"
-    # "programs/Production.R",
-    # "programs/CNIV.R"
+    "config.R",
+    "programs/Production.R",
+    "programs/CNIV.R"
   ),
   .f = source,
   encoding = "UTF-8"
