@@ -4,7 +4,6 @@ options(scipen = 999)
 purrr::walk(
   .x = c(
     "config.R",
-    "programs/NR.R",
     "programs/Production.R",
     "programs/CNIV.R"
   ),
@@ -81,32 +80,57 @@ msd <-
   ) %>%
   arrow::read_feather()
 
-msd = msd %>% mutate(flux = str_sub(Flux,1,1))
+if (!dir.exists(pipeline_directory)) {
+  source(
+    file = "Refactoring/prep pipeline.R",
+    encoding = "UTF-8",
+    echo = TRUE
+  )
+}
 
 exogenous_intro <-
-  import_ca3(
-    base_CA3 = base_CA3,
-    sample_intro = sample_intro,
-    delete_data = delete,
-    date_prediction = date_prediction
-  )
+  file.path(
+    pipeline_directory,
+    "exogenous_intro.arrow"
+  ) %>%
+  arrow::read_feather()
 
-detail_intro <- import_detail(
-  object = input_object,
-  flow = "I",
-  condition = "payp %notin% c('XU', 'GB')"
-)
+detail_intro <- 
+  file.path(
+    pipeline_directory,
+    "detail_intro"
+  ) %>%
+  arrow::open_dataset() %>% 
+  collect()
 
-detail_exped <- import_detail(
-  object = input_object,
-  flow = "E",
-  condition = "pyod %notin% c('XU', 'GB')"
-)
+detail_exped <-
+  file.path(
+    pipeline_directory,
+    "detail_exped"
+  ) %>%
+  arrow::open_dataset() %>% 
+  collect()
 
-endogenous_intro <- import_endogenous(input_object, "I")
-endogenous_exped <- import_endogenous(input_object, "E")
+endogenous_intro <-
+  file.path(
+    pipeline_directory,
+    "endogenous_intro.arrow"
+  ) %>%
+  arrow::read_feather()
+  
+endogenous_exped <-
+  file.path(
+    pipeline_directory,
+    "endogenous_exped.arrow"
+  ) %>%
+  arrow::read_feather()
 
-ER <- import_ER(input_object)
+ER <-
+  file.path(
+    pipeline_directory,
+    "etats_recap.arrow"
+  ) %>%
+  arrow::read_feather()
 
 # LAUNCH SIMULATIONS ------------------------------------------------------
 
