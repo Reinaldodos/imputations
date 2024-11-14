@@ -36,5 +36,7 @@ import_msd <- function(data) {
     unnest(cols = c(data)) %>%
     group_by(siren, Flux) %>%
     reframe(period = unique(period)) %>%
+    mutate(flux = Flux %>% 
+             str_sub(end = 1)) %>% 
     return()
 }

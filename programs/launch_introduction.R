@@ -1,6 +1,8 @@
 
-
 ### Create introduction object
+
+source(file = "programs/NR.R",
+       encoding = "UTF-8")
 
 introduction <- NR(
   endogenous = endogenous_intro,
@@ -36,9 +38,14 @@ intro_ventil <- launch_all_distributions(
 
 ### Add previous months
 
-intro_imput_with_past_month <- add_historical_simulation(introduction, input_object, intro_imput, type = "imput")
 
-intro_ventil_with_past_month <- add_historical_simulation(introduction, input_object, intro_ventil, type = "ventil")
+intro_imput_with_past_month <-
+  add_historical_simulation(introduction, input_object, 
+                            intro_imput, type = "imput")
+
+intro_ventil_with_past_month <-
+  add_historical_simulation(introduction, input_object, 
+                            intro_ventil, type = "ventil")
 
 
 ### Add gazelec file
@@ -69,8 +76,9 @@ intro_imput_rect <- remove_msd(
   type = "imput",
   input = input_object
 )
+
 date_prediction %>%
-  map( ~ export_imput_to_csv(
+  walk(~ export_imput_to_csv(
     data = intro_imput_rect,
     date = .x,
     filename_format = file.path(
@@ -85,6 +93,7 @@ date_prediction %>%
 #                                 sprintf(imput_filename_format, "intro", "%s"))
 #   ))
 
+
 intro_ventil_rect <- remove_msd(
   object = introduction,
   msd = msd,
@@ -92,15 +101,10 @@ intro_ventil_rect <- remove_msd(
   type = "ventil",
   input = input_object
 )
+
 export_ventil_to_csv(intro_ventil_rect,
                      filename = file.path(output_directory,
                                           sprintf(ventil_filename_format, "intro")))
-# export_ventil_to_csv(intro_ventil_rect,
-#                      filename = file.path(output_freenas_directory,
-#                                           sprintf(ventil_filename_format, "intro")))
-
-# historical_basis <- export_to_historical_basis(input_object, intro_ventil_rect,
-#                                                "intro", save = T)
 
 remove(
   introduction,

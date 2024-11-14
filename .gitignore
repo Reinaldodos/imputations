@@ -16,3 +16,4 @@ output.txt
 ETL/*
 analyses/*
 pipeline/*
+*.zip
