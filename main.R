@@ -148,11 +148,11 @@ print(Sys.time() - start)
 
 # PRODUCTION ------------------------------------------------------
 
-source("programs/launch_production.R", encoding = "UTF-8")
-
-source("programs/imputations_NATR.R", encoding = "UTF-8")
-source("programs/imputations_transport48Kv2.R", encoding = "UTF-8")
-source("programs/prgm_C3290.R", encoding = "UTF-8")
+# source("programs/launch_production.R", encoding = "UTF-8")
+# 
+# source("programs/imputations_NATR.R", encoding = "UTF-8")
+# source("programs/imputations_transport48Kv2.R", encoding = "UTF-8")
+# source("programs/prgm_C3290.R", encoding = "UTF-8")
 
 
 # CONTROLE ------------------------------------------------------
