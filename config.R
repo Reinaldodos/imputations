@@ -11,7 +11,7 @@ c(
 
 # DATE ------------------------------------------------------
 
-date_ref <- as_date("2024-12-01")
+date_ref <- as_date("2025-01-01")
 nb_date_prediction <- 2
 first_publication_date <- as_date("2022-01-01")
 date_prediction <- seq.Date(
@@ -104,13 +104,19 @@ sample_directory <- c(
     freenas_directory,
     "échantillon",
     "échantillon_202401"
+  ),
+  file.path(
+    freenas_directory,
+    "échantillon",
+    "échantillon_202501"
   )
 )
 
 date_sample <- c(
   first_publication_date,
   as.Date("2023-01-01"),
-  as.Date("2024-01-01")
+  as.Date("2024-01-01"),
+  as.Date("2025-01-01")
 )
 
 
@@ -122,7 +128,8 @@ sample_file <- data.frame(
   directory = sample_directory, 
   files = c("2022_FE_1_2022M032EC-s5v18.csv",
             "2023_FE_4_8.5_20240115.csv",
-            "2024_FE_2_1.7_20250120.csv"), 
+            "2024_FE_2_1.7_20250120.csv",
+            "2025_FE_1_1.0_20250221.csv"), 
   encoding = "UTF-8", 
   date_beg = date_sample,
   dec = ",",
@@ -152,7 +159,7 @@ intro_imput_file <- data.frame(
   files = c(
     sprintf(
       "intro_imput_%s-%s.csv",
-      year(date_ref - years(4)),
+      year(date_ref - years(5)),
       year(date_ref)
     ),
     "intro_imput_2011-2022_extract20220222.zip"
@@ -164,12 +171,12 @@ intro_imput_file <- data.frame(
   ),
   dec = ",",
   start = c(
-    date_ref - years(4),
+    date_ref - years(5),
     learning_from
   ),
   end = c(
     date_ref,
-    date_ref - years(4) - months(1)
+    date_ref - years(5) - months(1)
   ),
   historical = c(F, F),
   astrineo_input = c(T, T)
@@ -184,7 +191,7 @@ exped_imput_file <- data.frame(
   files = c(
     sprintf(
       "exped_imput_%s-%s.csv",
-      year(date_ref - years(4)),
+      year(date_ref - years(5)),
       year(date_ref)
     ),
     "exped_imput_2011-2022_extract20220222.zip"
@@ -196,12 +203,12 @@ exped_imput_file <- data.frame(
   ),
   dec = ",",
   start = c(
-    date_ref - years(4),
+    date_ref - years(5),
     learning_from
   ),
   end = c(
     date_ref,
-    date_ref - years(4) - months(1)
+    date_ref - years(5) - months(1)
   ),
   historical = c(F, F),
   astrineo_input = c(T, T)
@@ -213,7 +220,8 @@ intro_ventil_file <- data.frame(
   directory = input_directory,
   files = c(
     "intro_ventil_2021.csv", "intro_ventil_2022.csv",
-    "intro_ventil_2023.csv", "intro_ventil_2024.csv"
+    "intro_ventil_2023.csv", "intro_ventil_2024.csv",
+    "intro_ventil_2024.csv"
   ),
   encoding = "UTF-8",
   skiprows = 0,
@@ -222,7 +230,8 @@ intro_ventil_file <- data.frame(
     as_date("2021-01-01"),
     as_date("2022-01-01"),
     as_date("2023-01-01"),
-    as_date("2024-01-01")
+    as_date("2024-01-01"),
+    as_date("2025-01-01")
   ),
   end = date_ref,
   astrineo_input = T
@@ -234,12 +243,12 @@ exped_ventil_file <- data.frame(
   files = c(
     sprintf(
       "exped_ventil_%s-%s.csv",
-      year(date_ref - years(3)),
-      year(date_ref - years(2))
+      year(date_ref - years(4)),
+      year(date_ref - years(3))
     ),
     sprintf(
       "exped_ventil_%s-%s.csv",
-      year(date_ref - years(1)),
+      year(date_ref - years(2)),
       year(date_ref)
     )
   ),
@@ -256,10 +265,10 @@ ER_file <- data.frame(
   directory = input_directory,
   files = sprintf(
     "ER_exped_%s.csv",
-    paste0(year(date_ref - years(2)), "-", year(date_ref))
+    paste0(year(date_ref - years(3)), "-", year(date_ref))
   ),
   encoding = "UTF-8",
-  skiprows = 15,
+  skiprows = 16,
   dec = ",",
   start = date_ref - months(3),
   end = date_ref,
@@ -285,10 +294,10 @@ gazelec_file <- data.frame(
 pass_names <- c("annee", "ngp9", "cpf6", "a17", "a38", "a129", "cpfrev1", "nes114", "ctci")
 
 pass_file <- data.frame(
-  files = c("11- fichier POLYCO2021.xls", "11- POLYCO2022.xls", "11_POLYCO2023_b.xlsx", "11_POLYCO2024_b.xlsx"),
+  files = c("11- fichier POLYCO2021.xls", "11- POLYCO2022.xls", "11_POLYCO2023_b.xlsx", "11_POLYCO2024_b.xlsx","11_POLYCO2025.xls"),
   skiprows = 1,
   directory = c("Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI/traitement non-réponse/data"),
-  year = c(2021, 2022, 2023, 2024),
+  year = c(2021, 2022, 2023, 2024,2025),
   cols = "A:I"
 )
 
@@ -308,7 +317,7 @@ cniv_file <- data.frame(
     input_directory
   ),
   type = c("confederation_to_ngp", "client", "reference", "input"),
-  skiprows = c(0, 1, 0, 15),
+  skiprows = c(0, 1, 0, 16),
   start = make_date(year = min(y) - 1, month = 1, day = 1),
   end = date_ref,
   dec = ",",
