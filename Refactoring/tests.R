@@ -19,3 +19,17 @@ test_MSD_fichiers_presents <- function(msd_file) {
     }
   )
 }
+
+
+
+test_last_simulation <-function(base_historique, date_ref) {
+  testthat::test_that(
+    desc = "La base historique est-elle à date?",
+    code = {
+      testthat::expect_equal(lubridate::ym(get_last_histo(base_historique = base_historique)), date_ref-months(1))
+    }
+  )
+}
+
+
+
