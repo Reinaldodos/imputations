@@ -11,7 +11,7 @@ c(
 
 # DATE ------------------------------------------------------
 
-date_ref <- as_date("2025-01-01")
+date_ref <- as_date("2025-02-01")
 nb_date_prediction <- 2
 first_publication_date <- as_date("2022-01-01")
 date_prediction <- seq.Date(
@@ -129,7 +129,7 @@ sample_file <- data.frame(
   files = c("2022_FE_1_2022M032EC-s5v18.csv",
             "2023_FE_4_8.5_20240115.csv",
             "2024_FE_2_1.7_20250120.csv",
-            "2025_FE_1_1.0_20250221.csv"), 
+            "2025_FE_1_1.1_20250320.csv"), 
   encoding = "UTF-8", 
   date_beg = date_sample,
   dec = ",",
@@ -284,6 +284,12 @@ ca3_file <- data.frame(
 base_CA3 <- "~/dsece-imputation-nr/CA3 Parquet/"
 
 test_last_CA3(base_CA3 = base_CA3, date_ref = date_ref)
+
+
+base_historique <- file.path(historical_directory,"base_parquet/")
+
+test_last_simulation(base_historique = base_historique, date_ref = date_ref)
+
 
 gazelec_file <- data.frame(
   files = sprintf("DEB_gazélec_%s.xlsx", format(date_ref, "%Y%m")),
