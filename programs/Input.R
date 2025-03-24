@@ -119,6 +119,44 @@ connect_to_last_ca3 <- function(base_CA3) {
     return()
 }
 
+
+get_last_histo <- function(base_historique) {
+  list.dirs(path = base_historique) %>%
+    dplyr::as_tibble() %>%
+    tidyr::extract(
+      col = value,
+      into = "mois_ref",
+      regex = "mois_ref=(.*)",
+      convert = TRUE
+    ) %>%
+    dplyr::filter(mois_ref == max(mois_ref, na.rm = TRUE)) %>%
+    dplyr::pull(mois_ref) %>%
+    return()
+}
+
+
+
+connect_to_last_histo <- function(base_historique) {
+  derniers_simul<- get_last_histo(base_historique = base_historique)
+  
+  base_historique %>%
+    arrow::open_dataset() %>%
+    dplyr::filter(mois_ref == derniers_simul) %>%
+    return()
+}
+
+
+
+import_historique <- function(base_historique) {
+  base_historique %>%
+    connect_to_last_histo() %>%
+    collect() %>%
+    clean_names() %>%
+    return()
+}
+
+
+
 import_input <- function(source_file, file, ...) {
   fichier <- rio::import(
     file.path(source_file[source_file$files == file, ]$directory, file),
@@ -598,10 +636,7 @@ setMethod(
       flow = c("E", "I"),
       flow_name = c("exped", "intro")
     )
-    historical_basis <- readRDS(file.path(
-      object@historical_directory,
-      "Base_historique.rds"
-    )) %>%
+    historical_basis <- import_historique(base_historique) %>%
       mutate(
         period_last = as.Date(period_last),
         period = as.Date(period)
