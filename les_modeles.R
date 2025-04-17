@@ -16,6 +16,11 @@ ca3_extract = base_CA3 %>%
   collect() %>% 
   clean_names() 
 
+exogenous_intro_old = ca3_extract %>%
+  # filter(medoc_0031 > 0) %>%
+  mutate(period = make_date(str_sub(periode, 1, 4), str_sub(periode, -2), "01")) %>%
+  select(-periode)
+
 
 histo = base_historique %>% 
   arrow::open_dataset() %>% 
@@ -138,6 +143,7 @@ launch_sarima = function(data, siren_list, prediction_period) {
     )
   ) 
 
+ 
 
  c("962227351", "900000000") %>% 
   map_df(
@@ -202,8 +208,9 @@ taking_mean = function(data, prediction_period, siren_list) {
     mutate(
       cummean_vart = if_else(is.na(vart), NA_real_, cummean(replace_na(vart, NA_real_))),
       prediction = lag(cummean_vart),
-      method = "taking_mean") %>%
-    filter(period == prediction_period) %>% 
+      method = "taking_mean"
+    ) %>%
+    filter(period == prediction_period) %>%
     select(-cummean_vart)
     
     return(pred)
@@ -432,114 +439,104 @@ setMethod(
 
 
 
-create_ts <- function(data, endo_name, exog_name, months = c("july", "august1", "august2", "september")) {
-  vars <- c(endo_name, exog_name, months)
+# chat
+
+
+
+launch_reglin <- function(endogenous, exogenous, 
+                          prediction_period, siren_list,
+                          nb_learning_year = 5) {
+
+  library(dplyr)
+  library(lubridate)
+  library(foreach)
+  library(doParallel)
+  library(tibble)
   
-  ts_data <- data |>
-    select(period, all_of(vars)) |>
-    tsbox::ts_ts() |>
-    stats::window()
-  
-  # Remplace les NA par 0
-  ts_data[is.na(ts_data)] <- 0
-  
-  colnames(ts_data) <- vars
-  return(ts_data)
-}
-
-
-
-launch_reglin <- function(endogenous,
-                          exogenous,
-                          prediction_period,
-                          siren_list,
-                          endo_name,
-                          exog_name,
-                          nb_learning_year = 5,
-                          nbproc = 10
-                          ) {
-
   pred_period <- seq(
     from = min(prediction_period),
-    to = max(max(prediction_period), min(prediction_period) %m+% months(12)),
+    to = max(max(prediction_period), min(prediction_period) + months(12)),
     by = "month"
   )
-
   
-  prediction <- endogenous_intro |>
-                            filter(siren == "910374628") |>
-                            left_join(exogenous_intro, by = c("siren", "period")) |>
-                            filter(period >= min(pred_period) - years(nb_learning_year),
-                                   period <= max(pred_period)) |>
-                            full_join(data.frame(period = pred_period), by = "period") |>
-                            arrange(period) |>
-                            mutate(
-                              year = year(period),
-                              july = if_else(month(period) == 7 & (is.na(medoc_0031) | medoc_0031 == 0), 1, 0),
-                              august1 = if_else(
-                                month(period) == 8 &
-                                  lag(medoc_0031, order_by = period) == 0,
-                                1, 0
-                              ),
-                              august2 = if_else(month(period) == 8 & (is.na(medoc_0031) | medoc_0031 == 0), 1, 0),
-                              september = if_else(
-                                month(period) == 9 &
-                                  lag(medoc_0031, 1, order_by = period) == 0,
-                                1, 0
-                              )
-                            )
-                          
-                          ts_data <- create_ts(data, endo_name = endo_name, exog_name = exog_name)
-                          
-                          # Construction de la formule
-                          formula_str <- paste(
-                            endo_name,
-                            paste(c(exog_name, "july", "august1", "august2", "september"), collapse = " + "),
-                            sep = " ~ "
-                          )
-                          
-                          model <- try(
-                            lm(as.formula(formula_str),
-                               data = stats::window(ts_data, end = c(year(min(pred_period %m-% months(1))), month(min(pred_period %m-% months(1)))))),
-                            silent = TRUE
-                          )
-                          
-                          if (!inherits(model, "try-error")) {
-                            model <- try(step(model, direction = "backward"), silent = TRUE)
-                            if (!inherits(model, "try-error")) {
-                              pred <- predict(model, newdata = stats::window(ts_data, start = c(year(min(pred_period)), month(min(pred_period)))))
-                              return(tibble(siren = siren, period = pred_period, prediction = pred))
-                            }
-                          }
-                          
-                          # En cas d'échec
-                          tibble(siren = siren, period = pred_period, prediction = NA_real_)
-                        }
-  
-  stopCluster(cl)
-  
-  prediction <- prediction |>
-    mutate(method = "launch_reglin")
-  
-  # Plan B si alternative demandée
-  if (alternative) {
-    alt_prediction <- taking_last_year(
-      endogenous = endogenous,
-      prediction_period = prediction_period,
-      siren = prediction |>
-        filter(is.na(prediction) | prediction <= 0) |>
-        pull(siren) |>
-        unique(),
-      alternative = TRUE
-    )
+  endo_name = "vart"
+  exog_name="medoc_0031"
+ 
+    data <- endogenous |>
+      left_join(exogenous, by = c("siren", "period")) |>
+      filter(
+        siren == siren_list,
+        period <= max(pred_period),
+        period >= ymd(min(pred_period)) - years(nb_learning_year)
+      ) |>
+      full_join(tibble(period = pred_period), by = "period") |>
+      arrange(period) |>
+      mutate(
+        year = year(period),
+        lag_exog = lag(.data[[exog_name]]),
+        july = if_else(month(period) == 7 &
+                         (is.na(.data[[exog_name]]) |
+                            .data[[exog_name]] == 0), 1, 0),
+        august1 = if_else(month(period) == 8 &
+                            (is.na(lag_exog) |
+                               lag_exog == 0), 1, 0),
+        august2 = if_else(month(period) == 8 &
+                            (is.na(.data[[exog_name]]) |
+                               .data[[exog_name]] == 0), 1, 0),
+        september = if_else(month(period) == 9 &
+                              (is.na(lag_exog) |
+                                 lag_exog == 0), 1, 0)
+      )
     
-    prediction <- bind_rows(
-      inner_join(prediction |> select(siren, period), alt_prediction, by = c("siren", "period")),
-      anti_join(prediction, alt_prediction, by = c("siren", "period"))
-    )
-  }
-  
-  prediction |>
-    filter(period %in% prediction_period) |>
-    select(siren, period, prediction, method)
+    data_ts <- data |>
+      mutate(across(c(vart,medoc_0031), ~ replace_na(., 0))) |>
+      arrange(period)
+    
+    model_data <- data_ts |>
+      filter(period < min(pred_period))
+    
+    model <- tryCatch({
+      lm(formula = as.formula(paste(endo_name, "~", paste(
+        c(exog_name, "july", "august1", "august2", "september"),
+        collapse = " + "
+      ))),
+      data = model_data) |>
+        step(direction = "backward")
+    },
+    error = function(e)
+      NULL)
+    
+    future_data <- data_ts |>
+      filter(period %in% pred_period)
+    
+    pred <- if (!is.null(model)) {
+      tryCatch({
+        predict(model, newdata = future_data) |>
+          as.numeric()
+      },
+      error = function(e)
+        rep(NA_real_, length(pred_period)))
+    } else {
+      rep(NA_real_, length(pred_period))
+    }
+    
+    prediction =  tibble(siren = siren_list,
+                         period = pred_period,
+                         prediction = pred)
+    
+    
+    prediction = prediction |>
+      filter(period %in% prediction_period) |>
+      mutate( method = "launch_reglin") |>
+      select(siren, period, prediction, method)
+    
+    return(prediction)
 }
+
+launch_reglin(
+  endogenous = endogenous_intro,
+  exogenous = exogenous_intro,
+  prediction_period = as.Date("2024-12-01"),
+  siren_list = "328358734",
+  nb_learning_year = 5
+)
