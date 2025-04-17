@@ -24,7 +24,7 @@ exogenous_intro_old = ca3_extract %>%
 
 histo = base_historique %>% 
   arrow::open_dataset() %>% 
-  dplyr::filter(mois_ref == 202501) %>% 
+  dplyr::filter(mois_ref == 202502) %>% 
   collect()
 
 
@@ -233,7 +233,7 @@ taking_mean(
 ## Le point calculé par regression linéaire -----------------------------------------------------------
 
 # launch_reglin
-
+# code Bao
 
 setGeneric(
   name = "create_ts",
@@ -439,14 +439,11 @@ setMethod(
 
 
 
-# chat
-
-
+##  fonction
 
 launch_reglin <- function(endogenous, exogenous, 
                           prediction_period, siren_list,
                           nb_learning_year = 5) {
-
   library(dplyr)
   library(lubridate)
   library(foreach)
