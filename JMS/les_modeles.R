@@ -6,22 +6,6 @@
 
 # voir partie launch_request
 
-ca3 = arrow::open_dataset("../dsece-imputation-nr/CA3 Parquet/") 
-
-
-ca3_extract = base_CA3 %>% 
-  arrow::open_dataset() %>% 
-  dplyr::filter(mois_envoi == 202502) %>% 
-  select(SIREN, PERIODE, Medoc_0031) %>% 
-  collect() %>% 
-  clean_names() 
-
-exogenous_intro_old = ca3_extract %>%
-  # filter(medoc_0031 > 0) %>%
-  mutate(period = make_date(str_sub(periode, 1, 4), str_sub(periode, -2), "01")) %>%
-  select(-periode)
-
-
 histo = base_historique %>% 
   arrow::open_dataset() %>% 
   dplyr::filter(mois_ref == 202502) %>% 
