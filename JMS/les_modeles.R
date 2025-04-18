@@ -235,6 +235,8 @@ taking_mean(
 create_ts = function(data,
                      months = c('july', 'august1',
                                 'august2', 'september')) {
+  endo_name = "vart"
+  exog_name = "medoc_0031"
   ttmp <- cbind(ts_ts(data[, c('period', endo_name)]),
                 ts_ts(data[, c('period', exog_name)]))
   for (month in months) {
