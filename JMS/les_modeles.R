@@ -248,12 +248,16 @@ create_ts = function(data,
 
 
 
-launch_reglin <- function(endogenous,
+launch_reglin <- function(data,
                           exogenous,
                           prediction_period,
                           siren_list,
                           nb_learning_year = 5) {
   pacman::p_load(tsbox)
+  
+
+  if(is.null(exogenous))
+    return()
   
   pred_period <- seq(
     from = min(prediction_period),
@@ -261,7 +265,7 @@ launch_reglin <- function(endogenous,
     by = 'month'
   )
   data <-
-    endogenous %>%
+    data %>%
     left_join(exogenous,
               by = c('siren', 'period')) %>%
     filter(siren == siren_list,
@@ -292,7 +296,6 @@ launch_reglin <- function(endogenous,
     )
   
   
-  print(data)
   data <- create_ts(data2)
   model <- try(lm(as.formula(paste('vart',
                                    paste(
@@ -340,19 +343,20 @@ launch_reglin <- function(endogenous,
   prediction <- pred %>%
     filter(period %in% prediction_period) %>%
     mutate(prediction, method = "launch_reglin")
-  return(prediction)
-}
+  return(prediction$prediction)
+  }
 
 
 launch_reglin(
-  endogenous = endogenous_intro,
+  data = endogenous_intro,
   exogenous = exogenous_intro,
   prediction_period = as.Date("2024-12-01"),
   siren_list = "328358734",
   nb_learning_year = 5
 )
+
 launch_reglin(
-  endogenous = endogenous_intro,
+  data = endogenous_intro,
   exogenous = exogenous_intro,
   prediction_period = as.Date("2024-12-01"),
   siren_list = "300000000",
