@@ -52,24 +52,30 @@ voir = taking_exog(
 
 ## La valeur de l'ER ---------------------------------------------------
 
-taking_ER = function(data, prediction_period, siren_list) {
-  
+taking_ER = function(data, exogenous, prediction_period, siren_list) {
   prediction <- data.frame(
     siren = rep(siren_list, each = length(prediction_period)),
     period = rep(prediction_period, length(siren_list))) %>% 
     mutate_at('period', as.Date)
   
-  prediction <- 
-    prediction %>% left_join(data,
-                             by = c('siren', 'period')) %>%
-      rename('prediction' = vfte) %>% 
+  if (!is.null(exogenous)) {
+    prediction <-
+      prediction %>%
+      left_join(y = exogenous,
+                by = c('siren', 'period')) %>%
       mutate(method = "taking_ER")
+  }
 
-  return(as_tibble(prediction))
-}
+  if("vfte"%in% colnames(prediction)){
+    prediction <-
+      prediction %>% 
+      rename(prediction = vfte) 
+  }
+  return(prediction$prediction)
+  }
 
 # ok
-voir_ER = taking_ER(data = ER,
+voir_ER = taking_ER(exogenous = ER,
                     siren_list = c("395388077","659803175","951849652"),
                     prediction_period = c("2024-12-01","2025-01-01"))
 
