@@ -3,29 +3,37 @@ library(tidyverse)
 # mapping des modèles selon le flux
 
 modeles <-
-  tribble(
-    ~model,
-    ~flux,
-    "taking_exog",
-    "intro",
-    "taking_ER",
-    "intro + expe",
-    "launch_sarima",
-    "intro + expe",
-    "taking_last_year",
-    "expe",
-    "taking_mean",
-    "intro + expe",
-    "launch_reglin",
-    "intro + expe"
+  list(
+    crossing(
+      flux = "expe",
+      regdem = "21",
+      model = c(
+        "taking_ER",
+        "launch_sarima",
+        "taking_last_year",
+        "taking_mean"
+      )
+    ),
+    crossing(
+      flux = "expe",
+      regdem = "29",
+      model = c("launch_sarima",
+                "taking_last_year",
+                "taking_mean")
+    ),
+    crossing(
+      flux = "intro",
+      regdem = c("all"),
+      model = c(
+        "launch_reglin",
+        "taking_exog",
+        "launch_sarima",
+        "taking_last_year",
+        "taking_mean"
+      )
+    )
   ) %>%
-  tidyr::separate(col = flux, into = c("intro", "expe"), sep = " \\+ ") %>%
-  pivot_longer(
-    cols = c(intro, expe),
-    names_to = "TOTO",
-    values_to = "flux",
-    values_drop_na = TRUE
-  ) %>%
+  bind_rows()
   select(-TOTO)
 
 
