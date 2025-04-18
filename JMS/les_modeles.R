@@ -127,13 +127,12 @@ launch_sarima = function(data, siren_list, prediction_period) {
       prediction = NA
     )
   }
-  return(pred)
-  
+  return(pred$prediction)  
 }
 
 
  c("962227351", "900000000") %>% 
-  map_df(
+  map(
     ~ launch_sarima(
       data = endogenous_intro,
       siren_list = .,
@@ -144,7 +143,7 @@ launch_sarima = function(data, siren_list, prediction_period) {
  
 
  c("962227351", "900000000") %>% 
-  map_df(
+  map(
   ~ launch_sarima(
     data = endogenous_exped %>% select(siren,period,vart=vart_29),
     siren_list = .,
@@ -168,10 +167,11 @@ launch_sarima = function(data, siren_list, prediction_period) {
       left_join(
         data,
         by = c('siren' = 'siren',
-               'last_year' = 'period')) %>% rename(prediction = vart)
+               'last_year' = 'period')) %>% 
+      rename(prediction = vart)
     
-  return(prediction)
-  }
+    return(prediction$prediction)
+    }
 
  taking_last_year(data = endogenous_intro,
                   prediction_period = "2025-01-01",
@@ -200,7 +200,8 @@ taking_mean = function(data, prediction_period, siren_list) {
         filter(siren %in% siren_list),
       by = c('siren', 'period'))
   
-  pred = prediction %>%
+  pred =
+    prediction %>%
     group_by(siren) %>%
     arrange(period) %>%
     mutate(
@@ -208,10 +209,11 @@ taking_mean = function(data, prediction_period, siren_list) {
       prediction = lag(cummean_vart),
       method = "taking_mean"
     ) %>%
+    ungroup() %>% 
     filter(period == prediction_period) %>%
     select(-cummean_vart)
     
-    return(pred)
+  return(pred$prediction)
   }
 
 
