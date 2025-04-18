@@ -1,6 +1,10 @@
 library(tidyverse)
 
-# mapping des modèles selon le flux
+source(file = "JMS/les_modeles.R", echo = FALSE)
+
+date_a_predire <- as_date("2025-01-01")
+
+# mapping des modèles selon le flux ---------------------------------------
 
 modeles <-
   list(
@@ -165,3 +169,4 @@ endogenous %>%
                           period == prediction_period)) %>% 
   ggplot(mapping = aes(x = vart, y = result, colour = model)) +
   geom_point() +
+  geom_abline()
