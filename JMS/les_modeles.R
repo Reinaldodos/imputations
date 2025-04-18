@@ -18,26 +18,34 @@ histo = base_historique %>%
 
 ## La valeur CA3 -------------------------------------------------------
 
-taking_exog = function(data, prediction_period, siren_list) {
+taking_exog = function(data, exogenous, prediction_period, siren_list) {
   
   prediction <- data.frame(
     siren = rep(siren_list, each = length(prediction_period)),
     period = rep(prediction_period, length(siren_list))) %>%
     mutate_at('period', as.Date)
   
+  if (!is.null(exogenous)) {
   prediction <- 
-    prediction %>% left_join(data,
-                             by = c('siren', 'period')) %>%
-    rename('prediction' = medoc_0031) %>% 
+    prediction %>% 
+    left_join(exogenous,
+              by = c('siren', 'period')) %>%
     mutate(method = "taking_exog")
+  }
   
-  return(as_tibble(prediction))
+  if("medoc_0031" %in% colnames(prediction)){
+  prediction <-
+    prediction %>%
+    rename(prediction = medoc_0031) 
+  }
+    
+  return(prediction$prediction)
 }
 
 
  # ok
 voir = taking_exog(
-                  data = exogenous_intro,
+                  exogenous = exogenous_intro,
                   siren_list = c("838752400","327086245"),
                   prediction_period = c("2024-12-01","2025-01-01"))
 
