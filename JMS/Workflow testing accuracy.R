@@ -161,17 +161,22 @@ safe_launch_model <- safely(.f = launch_model)
 test <- 
   input %>% 
   group_by(model, flux, regdem) %>% 
-  sample_n(10) %>% 
+  sample_n(100) %>% 
   ungroup() %>% 
   arrange(siren)
-  
+
+library(furrr)
+
+plan(strategy = "multisession",
+     workers = availableCores() - 1)
+
 output_test <- 
   test %>% 
   mutate(
-    result = pmap(.f = safe_launch_model, 
-                  .progress = TRUE, 
+    result = future_pmap(.f = safe_launch_model, 
+                  # .progress = TRUE,
                   .l = list(data = data,
-                            exogenous = ca3,
+                            exogenous = exogenous,
                             prediction_period = prediction_period,
                             siren = siren,
                             model = model))
@@ -180,6 +185,8 @@ output_test <-
     error = map(.x = result, .f = ~.$error),
     result = map(.x = result, .f = ~.$result)
   )
+
+plan(strategy = "sequential")
 
 results_test <- 
   output_test %>%
