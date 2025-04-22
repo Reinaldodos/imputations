@@ -125,26 +125,52 @@ launch_sarima = function(data, siren_list, prediction_period) {
   return(pred$prediction)  
 }
 
-
- c("962227351", "900000000") %>% 
-  map(
-    ~ launch_sarima(
-      data = endogenous_intro,
-      siren_list = .,
-      prediction_period = "2025-01-01"
-    )
-  ) 
-
- 
-
- c("962227351", "900000000") %>% 
-  map(
-  ~ launch_sarima(
-    data = endogenous_exped %>% select(siren,period,vart=vart_29),
-    siren_list = .,
-    prediction_period = "2025-01-01"
+launch_sarima_refactor <- function(data, siren_list, prediction_period, learning_from = NULL) {
+  requireNamespace("tsbox")
+  requireNamespace("RJDemetra")
+  requireNamespace("lubridate")
+  requireNamespace("dplyr")
+  
+  pred_period <- lubridate::as_date(prediction_period)
+  if (is.null(learning_from)) {
+    learning_from <- min(data$period, na.rm = TRUE)
+  }
+  end_date <- pred_period[1] - lubridate::period(months = 1L)
+  
+  base <- expand.grid(
+    siren = siren_list,
+    period = seq.Date(
+      from = lubridate::as_date(learning_from),
+      to = end_date,
+      by = "month"
+    ),
+    stringsAsFactors = FALSE
   )
-) 
+  
+  merged <- dplyr::left_join(base, data, by = c("siren", "period"))
+  data_ts <- tsbox::ts_ts(merged)
+  
+  spec <- RJDemetra::regarima_spec_x13(spec = "RG3", preliminary.check = TRUE)
+  model <- try(RJDemetra::regarima(series = data_ts, spec = spec), silent = TRUE)
+  
+  if (!inherits(model, "try-error") && !is.null(model$forecast)) {
+    fc_df <- tsbox::ts_df(model$forecast[, "fcst"])
+    colnames(fc_df) <- c("period", "prediction")
+    out <- dplyr::tibble(
+      siren = rep(siren_list, length(pred_period)),
+      period = pred_period
+    ) %>%
+      dplyr::left_join(fc_df, by = "period")
+  } else {
+    out <- dplyr::tibble(
+      siren = rep(siren_list, length(pred_period)),
+      period = pred_period,
+      prediction = NA_real_
+    )
+  }
+  
+  out$prediction
+}
 
 ## La valeur du même mois l'année précédente -----------------------------------
 
