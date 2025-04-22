@@ -74,11 +74,6 @@ taking_ER = function(data, exogenous, prediction_period, siren_list) {
   return(prediction$prediction)
   }
 
-# ok
-voir_ER = taking_ER(exogenous = ER,
-                    siren_list = c("395388077","659803175","951849652"),
-                    prediction_period = c("2024-12-01","2025-01-01"))
-
 
 ## Le point projeté par sarima -----------------------------------------
 
@@ -173,15 +168,6 @@ launch_sarima = function(data, siren_list, prediction_period) {
     return(prediction$prediction)
     }
 
- taking_last_year(data = endogenous_intro,
-                  prediction_period = "2025-01-01",
-                  siren_list = "962227351")
- 
- taking_last_year(
-   data = endogenous_exped %>% select(siren, period, vart = vart_29),
-   prediction_period = "2025-01-01",
-   siren_list = "962227351"
- ) 
 
 ## La valeur moyenne -----------------------------------------------------------
 
@@ -215,20 +201,6 @@ taking_mean = function(data, prediction_period, siren_list) {
     
   return(pred$prediction)
   }
-
-
-taking_mean(
-  data = endogenous_intro,
-  prediction_period = "2025-01-01",
-  siren_list = c("978394542", "948848791", "987611118")
-) 
-
-
-taking_mean(
-  data = endogenous_exped %>% select(siren, period, vart = vart_21),
-  prediction_period = "2025-01-01",
-  siren_list = c("978394542", "948848791", "987611118")
-) 
 
 ## Le point calculé par regression linéaire -----------------------------------------------------------
 
