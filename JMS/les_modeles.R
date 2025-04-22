@@ -1,53 +1,26 @@
 
-
-# Partie 1 : les series ----------------------------------------------------
-
-# creer les requetes
-
-# voir partie launch_request
-
-histo = base_historique %>% 
-  arrow::open_dataset() %>% 
-  dplyr::filter(mois_ref == 202502) %>% 
-  collect()
-
-
-
-# Partie 2 : les modèles --------------------------------------------------
-
-
+library(tidyverse)
 ## La valeur CA3 -------------------------------------------------------
 
 taking_exog = function(data, exogenous, prediction_period, siren_list) {
   
   prediction <- data.frame(
     siren = rep(siren_list, each = length(prediction_period)),
-    period = rep(prediction_period, length(siren_list))) %>%
-    mutate_at('period', as.Date)
+    period = rep(prediction_period, length(siren_list)) %>% 
+      lubridate::as_date()) 
   
   if (!is.null(exogenous)) {
   prediction <- 
     prediction %>% 
-    left_join(exogenous,
-              by = c('siren', 'period')) %>%
+    left_join(y = exogenous,
+              by = join_by(siren, period)) %>%
     mutate(method = "taking_exog")
   }
   
   if("medoc_0031" %in% colnames(prediction)){
-  prediction <-
-    prediction %>%
-    rename(prediction = medoc_0031) 
-  }
-    
-  return(prediction$prediction)
+    return(prediction$medoc_0031)
+    }
 }
-
-
- # ok
-voir = taking_exog(
-                  exogenous = exogenous_intro,
-                  siren_list = c("838752400","327086245"),
-                  prediction_period = c("2024-12-01","2025-01-01"))
 
 
 ## La valeur de l'ER ---------------------------------------------------
@@ -88,7 +61,8 @@ launch_sarima = function(data, siren_list, prediction_period) {
       from = learning_from,
       to = ymd(first(pred_period)) - months(1),
       by = "month"
-    )) %>% mutate(siren = siren_list) %>%
+    )) %>% 
+      mutate(siren = siren_list) %>%
       left_join(data, by = c('siren', 'period'))
   )
   
@@ -349,18 +323,3 @@ launch_reglin <- function(data,
   }
 
 
-launch_reglin(
-  data = endogenous_intro,
-  exogenous = exogenous_intro,
-  prediction_period = as.Date("2024-12-01"),
-  siren_list = "328358734",
-  nb_learning_year = 5
-)
-
-launch_reglin(
-  data = endogenous_intro,
-  exogenous = exogenous_intro,
-  prediction_period = as.Date("2024-12-01"),
-  siren_list = "300000000",
-  nb_learning_year = 5
-)
