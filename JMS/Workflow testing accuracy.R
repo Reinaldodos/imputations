@@ -13,7 +13,7 @@ modeles <-
       regdem = "21",
       model = c(
         "taking_ER",
-        "launch_sarima",
+        "launch_sarima_refactor",
         "taking_last_year",
         "taking_mean"
       )
@@ -21,7 +21,7 @@ modeles <-
     crossing(
       flux = "expe",
       regdem = "29",
-      model = c("launch_sarima",
+      model = c("launch_sarima_refactor",
                 "taking_last_year",
                 "taking_mean")
     ),
@@ -31,7 +31,7 @@ modeles <-
       model = c(
         "launch_reglin",
         "taking_exog",
-        "launch_sarima",
+        "launch_sarima_refactor",
         "taking_last_year",
         "taking_mean"
       )
@@ -41,61 +41,84 @@ modeles <-
 
 
 # Mise en forme des inputs ------------------------------------------------
-echantillon = 
+last_sample <- 
   sample %>% 
-  select(siren, starts_with("deb_")) %>% 
-  pivot_longer(cols = starts_with("deb_"),
-               names_to = "flux",values_to = "TOTO", names_prefix = "deb_"
-  )%>% 
+  dplyr::count(date_beg) %>% 
+  filter(date_beg<date_a_predire) %>% 
+  top_n(n = 1, wt = date_beg) %>% 
+  semi_join(x = sample)
+
+echantillon = 
+  last_sample %>%
+  select(siren, starts_with("deb_")) %>%
+  pivot_longer(
+    cols = starts_with("deb_"),
+    names_to = "flux",
+    values_to = "TOTO",
+    names_prefix = "deb_"
+  ) %>%
   filter(TOTO == 1) %>%
   select(-TOTO)
 
 
-endogenous <- 
+endogenous <-
   list(
-    endogenous_intro %>%
-      mutate(regdem = "all",
-             flux = "intro"),
-    endogenous_exped %>%
+    "intro" =
+      endogenous_intro %>%
+      mutate(regdem = "all"),
+    "expe" = endogenous_exped %>%
       pivot_longer(
         cols = starts_with("vart_"),
         names_to = "regdem",
         values_to = "vart",
         names_prefix = "vart_"
       ) %>%
-      filter(vart > 0) %>% 
-      mutate(flux = "expe")
-  ) %>% 
-  bind_rows()
+      filter(vart > 0)
+  ) %>%
+  bind_rows(.id = "flux")
 
 exogenous <- 
   list(
-    exogenous_intro %>% 
-      mutate(flux = "intro"),
-    ER %>% 
-      mutate(flux = "expe")
-  ) %>% 
-  bind_rows()
+    "intro" = exogenous_intro,
+    "expe" = ER
+    ) %>% 
+  bind_rows(.id = "flux") 
   
 # importer les fichiers à utiliser ----------------------------------------
 
-
+cut_exogenous_if_reglin <- function(model, exogenous, prediction_period) {
+  if(model == "launch_reglin" && !is.null(exogenous)) {
+    exogenous <- 
+      exogenous %>%
+      filter(period < prediction_period)
+  }
+  return(exogenous)
+}
 
 input <-
   list(
     endogenous %>% 
-      
-      group_nest(siren, flux, regdem, .key = "data", 
+      filter(period < date_a_predire) %>% 
+    group_nest(siren, flux, regdem, .key = "data", 
                  keep = TRUE),
     exogenous %>%
-      group_nest(siren, flux, .key = "ca3", 
+      filter(period <= date_a_predire) %>% 
+      group_nest(siren, flux, .key = "exogenous", 
                  keep = TRUE),
     modeles
   ) %>%
   reduce(.f = left_join) %>%
   semi_join(y = echantillon,
             by = join_by(siren, flux)) %>% 
-  mutate(prediction_period = as_date(max(date_prediction)))
+  mutate(
+    prediction_period = date_a_predire,
+    exogenous = pmap(.f = cut_exogenous_if_reglin,
+                     .l = list(model = model,
+                               exogenous = exogenous, 
+                               prediction_period = prediction_period),
+                     .progress = TRUE
+                     )
+  )
 
 
 # Construire une factory d'appel dynamique des modèles --------------------
@@ -105,6 +128,9 @@ launch_model <- function(model,
                          exogenous,
                          prediction_period,
                          siren) {
+  # Charge l'ensemble des modèles dans l'environnement
+  source("~/imputations/JMS/les_modeles.R", encoding = 'UTF-8')
+  
   # Récupère la fonction à partir de son nom (string)
   model_fn <- get(model)
   
