@@ -1,14 +1,14 @@
 Erreurs <- 
   output_test %>% 
   mutate(is_error = map(.x = error,.f = is.null)) %>% 
-  unnest(cols = c(is_error)) %>% 
-  filter(!is_error) 
+  unnest(cols = c(is_error)) 
 
 Erreurs %>% 
-  split(x = .$error, f = .$model) %>% 
-  map(.f = unique)
+  count(!is_error, model, flux, regdem)
 
-
+Erreurs %>% 
+  filter(!is_error) %>% 
+  split(x = .$error, f = paste(.$siren, .$model, sep = " : ")) 
 
 pluck_pull <- function(string) {
   pluck(.x = test, string, 1)
