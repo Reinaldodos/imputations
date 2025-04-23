@@ -60,8 +60,7 @@ echantillon =
   filter(TOTO == 1) %>%
   select(-TOTO)
 
-
-endogenous <-
+endogenous_repondants <-
   list(
     "intro" =
       endogenous_intro %>%
@@ -76,6 +75,21 @@ endogenous <-
       filter(vart > 0)
   ) %>%
   bind_rows(.id = "flux")
+
+msd_vart <-
+  list(
+    endogenous_repondants %>%
+      distinct(flux, regdem),
+    msd %>%
+      drop_na() %>%
+      transmute(siren, period,
+                flux = str_to_lower(Flux),
+                vart = 0)
+  ) %>%
+  reduce(.f = inner_join,
+         by = join_by(flux))
+
+endogenous <- bind_rows(endogenous_repondants, msd)
 
 exogenous <- 
   list(
