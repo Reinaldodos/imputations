@@ -2,7 +2,7 @@ library(tidyverse)
 
 source(file = "JMS/les_modeles.R", echo = FALSE)
 
-date_a_predire <- as_date("2025-01-01")
+date_a_predire <- lubridate::ymd("2025-01-01")
 
 # mapping des modèles selon le flux ---------------------------------------
 
