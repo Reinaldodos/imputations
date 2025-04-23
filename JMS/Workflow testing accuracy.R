@@ -44,7 +44,7 @@ modeles <-
 last_sample <- 
   sample %>% 
   dplyr::count(date_beg) %>% 
-  filter(date_beg<date_a_predire) %>% 
+  filter(date_beg <= date_a_predire) %>%
   top_n(n = 1, wt = date_beg) %>% 
   semi_join(x = sample)
 
@@ -168,7 +168,7 @@ launch_model <- function(model,
   return(result)
 }
 
-safe_launch_model <- safely(.f = launch_model)
+safe_launch_model <- purrr::safely(.f = launch_model)
 
 
 # lancer le pipeline --------------------------------------
@@ -178,6 +178,8 @@ test <-
   sample_n(100) %>% 
   ungroup() %>% 
   arrange(siren)
+
+tictoc::tic()
 
 library(furrr)
 
@@ -202,18 +204,33 @@ output_test <-
 
 plan(strategy = "sequential")
 
+tictoc::toc()
+
 results_test <- 
   output_test %>%
   unnest(cols = c(result), names_repair = "universal") %>%
-  select(siren, flux, regdem, prediction_period, model, result)
-
-
-# Comparer aux vraies valeurs ---------------------------------------------
-
-endogenous %>% 
-  inner_join(y = results_test,
+  select(siren, flux, regdem, prediction_period, model, result) %>% 
+  inner_join(x = endogenous,
              by = join_by(siren, regdem, flux,
-                          period == prediction_period)) %>% 
+                          period == prediction_period)) 
+  
+# Comparer aux vraies valeurs ---------------------------------------------
+results_test %>% 
+  mutate(echec_modele = is.na(result)) %>% 
+  filter(echec_modele) %>% 
+  count(model, flux, regdem)
+
+results_test %>%
   ggplot(mapping = aes(x = vart, y = result, colour = model)) +
   geom_point() +
-  geom_abline()
+  geom_abline() +
+  scale_x_log10() +
+  scale_y_log10() +
+  facet_grid(rows = vars(model), cols = vars(flux, regdem),
+             scales = "free")
+
+results_test %>% 
+  summarise(cor = cor(x = result, y = vart, use = "pairwise.complete.obs"),
+            .by = c(model, flux, regdem)) %>% 
+  arrange(-cor) %>% 
+  group_split(flux, regdem)
