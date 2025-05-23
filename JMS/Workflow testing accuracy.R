@@ -1,5 +1,7 @@
 library(tidyverse)
 
+
+
 source(file = "JMS/les_modeles.R", echo = FALSE)
 
 date_a_predire <- lubridate::ymd("2025-01-01")
@@ -21,9 +23,11 @@ modeles <-
     crossing(
       flux = "expe",
       regdem = "29",
-      model = c("launch_sarima_refactor",
-                "taking_last_year",
-                "taking_mean")
+      model = c(
+        "launch_sarima_refactor",
+        "taking_last_year",
+        "taking_mean"
+      )
     ),
     crossing(
       flux = "intro",
@@ -41,14 +45,14 @@ modeles <-
 
 
 # Mise en forme des inputs ------------------------------------------------
-last_sample <- 
-  sample %>% 
-  dplyr::count(date_beg) %>% 
+last_sample <-
+  sample %>%
+  dplyr::count(date_beg) %>%
   filter(date_beg <= date_a_predire) %>%
-  top_n(n = 1, wt = date_beg) %>% 
+  top_n(n = 1, wt = date_beg) %>%
   semi_join(x = sample)
 
-echantillon = 
+echantillon <-
   last_sample %>%
   select(siren, starts_with("deb_")) %>%
   pivot_longer(
@@ -64,7 +68,7 @@ endogenous_repondants <-
   list(
     "intro" =
       endogenous_intro %>%
-      mutate(regdem = "all"),
+        mutate(regdem = "all"),
     "expe" = endogenous_exped %>%
       pivot_longer(
         cols = starts_with("vart_"),
@@ -83,26 +87,29 @@ msd_vart <-
     msd %>%
       drop_na() %>%
       transmute(siren, period,
-                flux = str_to_lower(Flux),
-                vart = 0)
+        flux = str_to_lower(Flux),
+        vart = 0
+      )
   ) %>%
-  reduce(.f = inner_join,
-         by = join_by(flux))
+  reduce(
+    .f = inner_join,
+    by = join_by(flux)
+  )
 
 endogenous <- bind_rows(endogenous_repondants, msd)
 
-exogenous <- 
+exogenous <-
   list(
     "intro" = exogenous_intro,
     "expe" = ER
-    ) %>% 
-  bind_rows(.id = "flux") 
-  
+  ) %>%
+  bind_rows(.id = "flux")
+
 # importer les fichiers à utiliser ----------------------------------------
 
 cut_exogenous_if_reglin <- function(model, exogenous, prediction_period) {
-  if(model == "launch_reglin" && !is.null(exogenous)) {
-    exogenous <- 
+  if (model == "launch_reglin" && !is.null(exogenous)) {
+    exogenous <-
       exogenous %>%
       filter(period < prediction_period)
   }
@@ -111,27 +118,36 @@ cut_exogenous_if_reglin <- function(model, exogenous, prediction_period) {
 
 input <-
   list(
-    endogenous %>% 
-      filter(period < date_a_predire) %>% 
-    group_nest(siren, flux, regdem, .key = "data", 
-                 keep = TRUE),
+    endogenous %>%
+      filter(period < date_a_predire) %>%
+      group_nest(siren, flux, regdem,
+        .key = "data",
+        keep = TRUE
+      ),
     exogenous %>%
-      filter(period <= date_a_predire) %>% 
-      group_nest(siren, flux, .key = "exogenous", 
-                 keep = TRUE),
+      filter(period <= date_a_predire) %>%
+      group_nest(siren, flux,
+        .key = "exogenous",
+        keep = TRUE
+      ),
     modeles
   ) %>%
   reduce(.f = left_join) %>%
-  semi_join(y = echantillon,
-            by = join_by(siren, flux)) %>% 
+  semi_join(
+    y = echantillon,
+    by = join_by(siren, flux)
+  ) %>%
   mutate(
     prediction_period = date_a_predire,
-    exogenous = pmap(.f = cut_exogenous_if_reglin,
-                     .l = list(model = model,
-                               exogenous = exogenous, 
-                               prediction_period = prediction_period),
-                     .progress = TRUE
-                     )
+    exogenous = pmap(
+      .f = cut_exogenous_if_reglin,
+      .l = list(
+        model = model,
+        exogenous = exogenous,
+        prediction_period = prediction_period
+      ),
+      .progress = TRUE
+    )
   )
 
 
@@ -143,11 +159,11 @@ launch_model <- function(model,
                          prediction_period,
                          siren) {
   # Charge l'ensemble des modèles dans l'environnement
-  source("~/imputations/JMS/les_modeles.R", encoding = 'UTF-8')
-  
+  source("~/imputations/JMS/les_modeles.R", encoding = "UTF-8")
+
   # Récupère la fonction à partir de son nom (string)
   model_fn <- get(model)
-  
+
   # Appelle la fonction dynamiquement
   if (model %in% c("taking_exog", "launch_reglin", "taking_ER")) {
     # avec CA3
@@ -172,65 +188,90 @@ safe_launch_model <- purrr::safely(.f = launch_model)
 
 
 # lancer le pipeline --------------------------------------
-test <- 
-  input %>% 
-  group_by(model, flux, regdem) %>% 
-  sample_n(100) %>% 
-  ungroup() %>% 
-  arrange(siren)
+
+test <-
+  input %>%
+  group_by(flux, regdem) %>%
+  sample_n(size = 40) %>%
+  # sample_frac(size = 0.01) %>%
+  ungroup() %>%
+  semi_join(
+    x = input,
+    by = join_by(flux, siren)
+  )
 
 tictoc::tic()
 
 library(furrr)
 
-plan(strategy = "multisession",
-     workers = availableCores() - 1)
+plan(strategy = "multisession", workers = availableCores() - 1)
 
-output_test <- 
-  test %>% 
+output_test <-
+  input %>%
   mutate(
-    result = future_pmap(.f = safe_launch_model, 
-                  # .progress = TRUE,
-                  .l = list(data = data,
-                            exogenous = exogenous,
-                            prediction_period = prediction_period,
-                            siren = siren,
-                            model = model))
-  ) %>% 
+    result = future_pmap(
+      .f = safe_launch_model,
+      # .progress = TRUE,
+      .l = list(
+        data = data,
+        exogenous = exogenous,
+        prediction_period = prediction_period,
+        siren = siren,
+        model = model
+      )
+    )
+  ) %>%
   mutate(
-    error = map(.x = result, .f = ~.$error),
-    result = map(.x = result, .f = ~.$result)
+    error = map(.x = result, .f = ~ .$error),
+    result = map(.x = result, .f = ~ .$result)
   )
 
 plan(strategy = "sequential")
 
+saveRDS(object = output_test, file = "JMS/workflow_data.rds")
+
 tictoc::toc()
 
-results_test <- 
+results_test <-
   output_test %>%
   unnest(cols = c(result), names_repair = "universal") %>%
-  select(siren, flux, regdem, prediction_period, model, result) %>% 
-  inner_join(x = endogenous,
-             by = join_by(siren, regdem, flux,
-                          period == prediction_period)) 
-  
+  select(siren, flux, regdem, prediction_period, model, result) %>%
+  inner_join(
+    x = endogenous,
+    by = join_by(
+      siren, regdem, flux,
+      period == prediction_period
+    )
+  )
+
 # Comparer aux vraies valeurs ---------------------------------------------
-results_test %>% 
-  mutate(echec_modele = is.na(result)) %>% 
-  filter(echec_modele) %>% 
-  count(model, flux, regdem)
+results_test %>%
+  mutate(echec_modele = is.na(result)) %>%
+  count(model, flux, regdem, echec_modele) %>%
+  spread(echec_modele, n, fill = 0) %>%
+  janitor::adorn_percentages() %>%
+  janitor::adorn_pct_formatting(affix_sign = TRUE)
+
+results_test %>%
+  summarise(
+    cor = cor(x = result, y = vart, use = "pairwise.complete.obs"),
+    .by = c(model, flux, regdem)
+  ) %>%
+  arrange(-cor) %>%
+  group_split(flux, regdem)
 
 results_test %>%
   ggplot(mapping = aes(x = vart, y = result, colour = model)) +
   geom_point() +
   geom_abline() +
+  # geom_smooth(method = "lm") +
   scale_x_log10() +
   scale_y_log10() +
-  facet_grid(rows = vars(model), cols = vars(flux, regdem),
-             scales = "free")
-
-results_test %>% 
-  summarise(cor = cor(x = result, y = vart, use = "pairwise.complete.obs"),
-            .by = c(model, flux, regdem)) %>% 
-  arrange(-cor) %>% 
-  group_split(flux, regdem)
+  facet_grid(
+    cols = vars(flux, regdem),
+    rows = vars(model), scales = "free"
+  )
+lims(
+  x = c(0, 8e5),
+  y = c(0, 8e5)
+)
