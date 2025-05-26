@@ -125,13 +125,14 @@ date_sample <- c(
 ################################################################################
 
 sample_file <- data.frame(
-  directory = sample_directory, 
-  files = c("2022_FE_1_2022M032EC-s5v18.csv",
-            "2023_FE_4_8.5_20240115.csv",
-            "2024_FE_2_1.7_20250120.csv",
-            "2025_FE_1_1.2_20250418.csv"), 
-  encoding = "UTF-8", 
+  directory = sample_directory,
+  files = c(
+    "2022_FE_1_2022M032EC-s5v18.csv",
+    "2023_FE_4_8.5_20240115.csv",
+    "2024_FE_2_1.7_20250120.csv",
     "2025_FE_1_1.3_20250521.csv"
+  ),
+  encoding = "UTF-8",
   date_beg = date_sample,
   dec = ",",
   skiprows = 0
@@ -287,7 +288,7 @@ base_CA3 <- "~/dsece-imputation-nr/CA3 Parquet/"
 test_last_CA3(base_CA3 = base_CA3, date_ref = date_ref)
 
 
-base_historique <- file.path(historical_directory,"base_parquet/")
+base_historique <- file.path(historical_directory, "base_parquet/")
 
 test_last_simulation(base_historique = base_historique, date_ref = date_ref)
 
@@ -301,10 +302,10 @@ gazelec_file <- data.frame(
 pass_names <- c("annee", "ngp9", "cpf6", "a17", "a38", "a129", "cpfrev1", "nes114", "ctci")
 
 pass_file <- data.frame(
-  files = c("11- fichier POLYCO2021.xls", "11- POLYCO2022.xls", "11_POLYCO2023_b.xlsx", "11_POLYCO2024_b.xlsx","11_POLYCO2025.xls"),
+  files = c("11- fichier POLYCO2021.xls", "11- POLYCO2022.xls", "11_POLYCO2023_b.xlsx", "11_POLYCO2024_b.xlsx", "11_POLYCO2025.xls"),
   skiprows = 1,
   directory = c("Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI/traitement non-réponse/data"),
-  year = c(2021, 2022, 2023, 2024,2025),
+  year = c(2021, 2022, 2023, 2024, 2025),
   cols = "A:I"
 )
 
@@ -330,5 +331,4 @@ cniv_file <- data.frame(
   dec = ",",
   encoding = "UTF-8",
   astrineo_input = c(F, F, F, T)
-  
 )
