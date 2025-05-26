@@ -11,7 +11,7 @@ c(
 
 # DATE ------------------------------------------------------
 
-date_ref <- as_date("2025-03-01")
+date_ref <- as_date("2025-04-01")
 nb_date_prediction <- 2
 first_publication_date <- as_date("2022-01-01")
 date_prediction <- seq.Date(
@@ -131,6 +131,7 @@ sample_file <- data.frame(
             "2024_FE_2_1.7_20250120.csv",
             "2025_FE_1_1.2_20250418.csv"), 
   encoding = "UTF-8", 
+    "2025_FE_1_1.3_20250521.csv"
   date_beg = date_sample,
   dec = ",",
   skiprows = 0
