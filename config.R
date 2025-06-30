@@ -11,7 +11,7 @@ c(
 
 # DATE ------------------------------------------------------
 
-date_ref <- as_date("2025-04-01")
+date_ref <- as_date("2025-05-01")
 nb_date_prediction <- 2
 first_publication_date <- as_date("2022-01-01")
 date_prediction <- seq.Date(
@@ -130,7 +130,7 @@ sample_file <- data.frame(
     "2022_FE_1_2022M032EC-s5v18.csv",
     "2023_FE_4_8.5_20240115.csv",
     "2024_FE_2_1.7_20250120.csv",
-    "2025_FE_1_1.3_20250521.csv"
+    "2025_FE_2_0.0_20250612.csv"
   ),
   encoding = "UTF-8",
   date_beg = date_sample,
@@ -223,7 +223,7 @@ intro_ventil_file <- data.frame(
   files = c(
     "intro_ventil_2021.csv", "intro_ventil_2022.csv",
     "intro_ventil_2023.csv", "intro_ventil_2024.csv",
-    "intro_ventil_2024.csv"
+    "intro_ventil_2025.csv"
   ),
   encoding = "UTF-8",
   skiprows = 0,
