@@ -11,7 +11,7 @@ c(
 
 # DATE ------------------------------------------------------
 
-date_ref <- as_date("2025-05-01")
+date_ref <- as_date("2025-06-01")
 nb_date_prediction <- 2
 first_publication_date <- as_date("2022-01-01")
 date_prediction <- seq.Date(
@@ -130,7 +130,7 @@ sample_file <- data.frame(
     "2022_FE_1_2022M032EC-s5v18.csv",
     "2023_FE_4_8.5_20240115.csv",
     "2024_FE_2_1.7_20250120.csv",
-    "2025_FE_2_0.0_20250612.csv"
+    "2025_FE_2_1.1_20250721.csv"
   ),
   encoding = "UTF-8",
   date_beg = date_sample,
@@ -251,13 +251,21 @@ exped_ventil_file <- data.frame(
     sprintf(
       "exped_ventil_%s-%s.csv",
       year(date_ref - years(2)),
+      year(date_ref - years(1))
+    ),
+    sprintf(
+      "exped_ventil_%s.csv",
       year(date_ref)
     )
   ),
   encoding = "UTF-8",
-  skiprows = 15,
+  skiprows = c(15, 15, 14),
   dec = ",",
-  start = c(date_ref - years(3), date_ref - years(1)),
+  start = c(
+    as_date("2021-01-01"),
+    as_date("2023-01-01"),
+    as_date("2025-01-01")
+  ),
   end = date_ref,
   astrineo_input = T
 )
