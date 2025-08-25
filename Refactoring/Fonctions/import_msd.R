@@ -1,4 +1,3 @@
-
 MSD_from_DebAdmin <- function(data, debadmin) {
   if (debadmin) {
     colnames(data) <- colnames(data)[2:ncol(data)]
@@ -16,7 +15,8 @@ import_msd <- function(data) {
         na.strings = "",
         row.names = NULL,
         skip = skiprows,
-        encoding = encoding
+        encoding = encoding,
+        colClasses = c(siret = "character")
       ) %>%
         MSD_from_DebAdmin(debadmin = debadmin) %>%
         mutate(
