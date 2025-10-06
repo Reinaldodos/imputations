@@ -113,9 +113,14 @@ get_last_ca3 <- function(base_CA3) {
 connect_to_last_ca3 <- function(base_CA3) {
   derniers_CA3 <- get_last_ca3(base_CA3 = base_CA3)
 
-  base_CA3 %>%
+  chemin <- file.path(
+    base_CA3,
+    paste0("mois_envoi=", derniers_ca3),
+    "donnees_mensuelles.parquet"
+  )
+
+  chemin %>%
     arrow::open_dataset() %>%
-    dplyr::filter(mois_envoi == derniers_CA3) %>%
     return()
 }
 
@@ -137,8 +142,8 @@ get_last_histo <- function(base_historique) {
 
 
 connect_to_last_histo <- function(base_historique) {
-  derniers_simul<- get_last_histo(base_historique = base_historique)
-  
+  derniers_simul <- get_last_histo(base_historique = base_historique)
+
   base_historique %>%
     arrow::open_dataset() %>%
     dplyr::filter(mois_ref == derniers_simul) %>%
@@ -397,8 +402,10 @@ setMethod(
         ) %>%
         ungroup() %>%
         group_by_at(variable) %>%
-        summarise(vart = sum(vart_new),
-                  .groups = "drop") %>%
+        summarise(
+          vart = sum(vart_new),
+          .groups = "drop"
+        ) %>%
         rename("siren" = "siren_new")
       # sirens_extra <- sample[sample %notin% unique(imput_data$siren)]
       sirens_extra <- subset(sample,
@@ -514,8 +521,10 @@ setMethod(
           siren_new, period, a129, nc8, payp, pyod,
           dept, regdem, temo, natr, conf
         ) %>%
-        summarise(vart = sum(vart_new),
-                  .groups = "drop") %>%
+        summarise(
+          vart = sum(vart_new),
+          .groups = "drop"
+        ) %>%
         rename("siren" = "siren_new")
       detail_data <- detail_data %>%
         anti_join(delete_data, by = "siren") %>%
@@ -537,34 +546,44 @@ setMethod(
 # ===============================================================================
 
 import_ca3 <- function(base_CA3, sample_intro, delete_data, date_prediction) {
-  ca3_data <- 
-    base_CA3 %>% 
-    connect_to_last_ca3() %>% 
-    select(SIREN, PERIODE, Medoc_0031) %>% 
-    collect() %>% 
-    janitor::clean_names() 
-  
-  
-  ca3_data %>% 
-    mutate(period = make_date(year = as.integer(substr(periode, 1, 4)),
-                              month = as.integer(substr(periode, 5, 6)),
-                              day = 1)) %>%
+  ca3_data <-
+    base_CA3 %>%
+    connect_to_last_ca3() %>%
+    select(SIREN, PERIODE, Medoc_0031) %>%
+    collect() %>%
+    janitor::clean_names()
+
+
+  ca3_data %>%
+    mutate(period = make_date(
+      year = as.integer(substr(periode, 1, 4)),
+      month = as.integer(substr(periode, 5, 6)),
+      day = 1
+    )) %>%
     subset(subset = ((period >= (min(date_prediction) - years(5))) &
-                       ((siren %in% sample_intro$siren) |
-                          (siren %in% delete_data$siren)))) %>% 
-    left_join(y = delete_data, 
-              by = 'siren',
-              relationship = "many-to-many")  %>% 
-    mutate(siren_new = ifelse(test = is.na(siren_repreneur),
-                              yes = siren,
-                              no = siren_repreneur),
-           medoc_0031 = ifelse(test = is.na(ratio),
-                               yes = as.numeric(medoc_0031),
-                               no = as.numeric(medoc_0031) * ratio)) %>% 
+      ((siren %in% sample_intro$siren) |
+        (siren %in% delete_data$siren)))) %>%
+    left_join(
+      y = delete_data,
+      by = "siren",
+      relationship = "many-to-many"
+    ) %>%
+    mutate(
+      siren_new = ifelse(test = is.na(siren_repreneur),
+        yes = siren,
+        no = siren_repreneur
+      ),
+      medoc_0031 = ifelse(test = is.na(ratio),
+        yes = as.numeric(medoc_0031),
+        no = as.numeric(medoc_0031) * ratio
+      )
+    ) %>%
     group_by(siren_new, period) %>%
-    summarise(medoc_0031 = sum(medoc_0031),
-              .groups = "drop") %>%
-    rename('siren' = 'siren_new') %>% 
+    summarise(
+      medoc_0031 = sum(medoc_0031),
+      .groups = "drop"
+    ) %>%
+    rename("siren" = "siren_new") %>%
     return()
 }
 
@@ -603,8 +622,10 @@ setMethod(
           )
         ) %>%
         group_by(siren_new, period) %>%
-        summarise(vfte = sum(vfte),
-                  .groups = "drop") %>%
+        summarise(
+          vfte = sum(vfte),
+          .groups = "drop"
+        ) %>%
         rename("siren" = "siren_new")
       saveRDS(
         ER_data,
@@ -768,8 +789,10 @@ setMethod(
       bind_rows() %>%
       mutate(nc8 = substr(ngp9, 1, 8)) %>%
       group_by(year, nc8, a129) %>%
-      summarise(ctci = unique(ctci),
-                .groups = "drop")
+      summarise(
+        ctci = unique(ctci),
+        .groups = "drop"
+      )
     return(pass_data)
   }
 )
