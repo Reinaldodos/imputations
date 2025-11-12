@@ -115,7 +115,7 @@ connect_to_last_ca3 <- function(base_CA3) {
 
   chemin <- file.path(
     base_CA3,
-    paste0("mois_envoi=", derniers_ca3),
+    paste0("mois_envoi=", derniers_CA3),
     "donnees_mensuelles.parquet"
   )
 
