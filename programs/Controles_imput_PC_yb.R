@@ -352,15 +352,6 @@ tab_exped <- tot_imp_exped %>%
 tab_imp <- rbind(tab_intro, tab_exped)
 
 
-### R?visions introductions
-# histo_rev_intro <- readRDS(file.path(Path_Data ,"histo_rev_intro.Rds"))
-
-### R?visions exp?ditions
-# histo_rev_exped <- readRDS(file.path(Path_Data ,"histo_rev_exped.Rds"))
-# revisions_exped <- revis_lastm(ventil_exped, histo_rev_exped)
-
-# Base_historique <- readRDS("Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI/traitement non-réponse/historique/Base_historique.rds")
-
 histo_rev <- arrow::open_dataset(
   sources = base_historique
 ) %>%

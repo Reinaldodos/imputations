@@ -11,7 +11,7 @@ c(
 
 # DATE ------------------------------------------------------
 
-date_ref <- as_date("2025-09-01")
+date_ref <- as_date("2025-10-01")
 nb_date_prediction <- 2
 first_publication_date <- as_date("2022-01-01")
 date_prediction <- seq.Date(
@@ -67,7 +67,7 @@ input_directory <- "input"
 ETL_directory <- "ETL"
 pipeline_directory <- "pipeline"
 output_directory <- "output_PC"
-freenas_directory <- "Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI"
+freenas_directory <- "P:/stat/01_etudes-methodes/@commun/EMEBI"
 dir.create(output_directory, showWarnings = F)
 
 output_freenas_directory <- file.path(
@@ -130,7 +130,7 @@ sample_file <- data.frame(
     "2022_FE_1_2022M032EC-s5v18.csv",
     "2023_FE_4_8.5_20240115.csv",
     "2024_FE_2_1.7_20250120.csv",
-    "2025_FE_3_1.0_20251014.csv"
+    "2025_FE_3_1.1_20251121.csv"
   ),
   encoding = "UTF-8",
   date_beg = date_sample,
@@ -156,7 +156,7 @@ test_MSD_fichiers_presents(msd_file = msd_file)
 intro_imput_file <- data.frame(
   directory = c(
     input_directory,
-    "Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI//traitement non-réponse/production_202201/input/"
+    "P:/stat/01_etudes-methodes/@commun/EMEBI/traitement non-réponse/production_202201/input/"
   ),
   files = c(
     sprintf(
@@ -188,7 +188,7 @@ intro_imput_file <- data.frame(
 exped_imput_file <- data.frame(
   directory = c(
     input_directory,
-    "Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI//traitement non-réponse/production_202201/input/"
+    "P:/stat/01_etudes-methodes/@commun/EMEBI//traitement non-réponse/production_202201/input/"
   ),
   files = c(
     sprintf(
@@ -312,7 +312,7 @@ pass_names <- c("annee", "ngp9", "cpf6", "a17", "a38", "a129", "cpfrev1", "nes11
 pass_file <- data.frame(
   files = c("11- fichier POLYCO2021.xls", "11- POLYCO2022.xls", "11_POLYCO2023_b.xlsx", "11_POLYCO2024_b.xlsx", "11_POLYCO2025.xls"),
   skiprows = 1,
-  directory = c("Z:/DG_STAT_prive/1_ETUDES et METHODES/@commun/EMEBI/traitement non-réponse/data"),
+  directory = c("P:/stat/01_etudes-methodes/@commun/EMEBI/traitement non-réponse/data"),
   year = c(2021, 2022, 2023, 2024, 2025),
   cols = "A:I"
 )
