@@ -362,6 +362,7 @@ histo_rev <- arrow::open_dataset(
     montant_imput = sum(prediction, na.rm = T),
     .groups = "drop"
   ) %>%
+  arrange(period, mois_ref) %>%
   collect() %>%
   pivot_wider(names_from = mois_ref, values_from = montant_imput, names_prefix = "chiffre_") %>%
   select(-c(source))
