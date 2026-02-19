@@ -708,31 +708,33 @@ setMethod(
       gazelec_data <- import_input(object@gazelec, object@gazelec$files) %>%
         mutate(
           across(
-            c(valeur, masse_nette_quantite, unites_supplementaires),
+            c(valeur, masse_nette_quantit_u_fffd, unit_s_suppl_u_fffd_mentaires),
             ~ parse_number(.x, locale = locale(decimal_mark = ","))
-          )) %>% 
+          )
+        ) %>%
         mutate(
-              period = make_date(year = annee, month = mois, day = 1),
-              n_tva = str_replace_all(n_tva_du_redevable, " ", ""),
-              siren = str_sub(n_tva_du_redevable, -9, -1),
-              regdem = str_sub(as.character(regime), 1, 2),
-              flux = ifelse(test = (str_sub(as.character(regime), 1, 1) == "1"),
-                            yes = "I",
-                            no = "E"
-              ),
-              dist_prediction = as.numeric(as.character(valeur)),
-              method = "reglementation",
-              method_ref = "reglementation",
-              period_last = NA, payp = pays_de_provenance, conf = NA,
-              endo = NA, sum_endo = NA, ratio = NA,
-              temo = as.character(mode_de_transport),
-              natr = as.character(nature_transaction),
-              dept = as.character(departement),
-              nc8 = str_pad(
-                string = as.character(nomenclature_nc8),
-                width = 8, side = "left", pad = "0"
-              )
-            ) %>%
+          period = make_date(year = ann_e, month = mois, day = 1),
+          n_tva = str_replace_all(n_tva_du_redevable, " ", ""),
+          siren = str_sub(n_tva_du_redevable, -9, -1),
+          regdem = str_sub(as.character(r_gime), 1, 2),
+          flux = ifelse(test = (str_sub(as.character(r_gime), 1, 1) == "1"),
+            yes = "I",
+            no = "E"
+          ),
+          dist_prediction = as.numeric(as.character(valeur)),
+          method = "reglementation",
+          method_ref = "reglementation",
+          period_last = NA, payp = pays_de_provenance,
+          pyod = pays_d_u_fffd_origine, conf = NA,
+          endo = NA, sum_endo = NA, ratio = NA,
+          temo = as.character(mode_de_transport),
+          natr = as.character(nature_transaction),
+          dept = as.character(d_partement),
+          nc8 = str_pad(
+            string = as.character(nomenclature_nc8),
+            width = 8, side = "left", pad = "0"
+          )
+        ) %>%
         group_by_at(group) %>%
         mutate(prediction = sum(dist_prediction)) %>%
         ungroup() %>%

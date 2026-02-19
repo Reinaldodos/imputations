@@ -228,9 +228,9 @@ exped_imput_file <- data.frame(
 intro_ventil_file <- data.frame(
   directory = input_directory,
   files = c(
-    "intro_ventil_2022.csv","intro_ventil_2023.csv",
-     "intro_ventil_2024.csv","intro_ventil_2025.csv",
-     "intro_ventil_2026.csv"
+    "intro_ventil_2022.csv", "intro_ventil_2023.csv",
+    "intro_ventil_2024.csv", "intro_ventil_2025.csv",
+    "intro_ventil_2026.csv"
   ),
   encoding = "UTF-8",
   skiprows = 0,
@@ -315,7 +315,9 @@ test_last_simulation(base_historique = base_historique, date_ref = date_ref)
 gazelec_file <- data.frame(
   files = sprintf("DEB_gazélec_%s.csv", format(date_ref, "%Y%m")),
   directory = input_directory,
-  skiprows = 0
+  skiprows = 0,
+  dec = ";",
+  encoding = "UTF-8"
 )
 
 
