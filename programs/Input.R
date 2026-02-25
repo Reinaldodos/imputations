@@ -725,7 +725,7 @@ setMethod(
           method = "reglementation",
           method_ref = "reglementation",
           period_last = NA, payp = pays_de_provenance,
-          pyod = pays_d_u_fffd_origine, conf = NA,
+          pyod = pays_de_destination, conf = NA,
           endo = NA, sum_endo = NA, ratio = NA,
           temo = as.character(mode_de_transport),
           natr = as.character(nature_transaction),
