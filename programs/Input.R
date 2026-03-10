@@ -706,26 +706,32 @@ setMethod(
           select = c(nc8, a129)
         )
       gazelec_data <- import_input(object@gazelec, object@gazelec$files) %>%
-        subset(subset = !is.na(mois)) %>%
         mutate(
-          period = make_date(year = an, month = mois, day = 1),
-          n_tva = str_replace_all(n_tva, " ", ""),
-          siren = str_sub(n_tva, -9, -1),
-          regdem = str_sub(as.character(regd), 1, 2),
-          flux = ifelse(test = (str_sub(as.character(regd), 1, 1) == "1"),
+          across(
+            c(valeur, masse_nette_quantit_u_fffd, unit_s_suppl_u_fffd_mentaires),
+            ~ parse_number(.x, locale = locale(decimal_mark = ","))
+          )
+        ) %>%
+        mutate(
+          period = make_date(year = ann_e, month = mois, day = 1),
+          n_tva = str_replace_all(n_tva_du_redevable, " ", ""),
+          siren = str_sub(n_tva_du_redevable, -9, -1),
+          regdem = str_sub(as.character(r_gime), 1, 2),
+          flux = ifelse(test = (str_sub(as.character(r_gime), 1, 1) == "1"),
             yes = "I",
             no = "E"
           ),
-          dist_prediction = vart,
+          dist_prediction = as.numeric(as.character(valeur)),
           method = "reglementation",
           method_ref = "reglementation",
-          period_last = NA, payp = pypr, conf = NA,
+          period_last = NA, payp = pays_de_provenance,
+          pyod = pays_de_destination, conf = NA,
           endo = NA, sum_endo = NA, ratio = NA,
-          temo = as.character(temo),
-          natr = as.character(natr),
-          dept = as.character(dept),
+          temo = as.character(mode_de_transport),
+          natr = as.character(nature_transaction),
+          dept = as.character(d_partement),
           nc8 = str_pad(
-            string = as.character(nc8),
+            string = as.character(nomenclature_nc8),
             width = 8, side = "left", pad = "0"
           )
         ) %>%

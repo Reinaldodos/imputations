@@ -11,7 +11,7 @@ c(
 
 # DATE ------------------------------------------------------
 
-date_ref <- as_date("2025-12-01")
+date_ref <- as_date("2026-01-01")
 nb_date_prediction <- 2
 first_publication_date <- as_date("2022-01-01")
 date_prediction <- seq.Date(
@@ -109,6 +109,11 @@ sample_directory <- c(
     freenas_directory,
     "échantillon",
     "échantillon_202501"
+  ),
+  file.path(
+    freenas_directory,
+    "échantillon",
+    "échantillon_202601"
   )
 )
 
@@ -116,7 +121,8 @@ date_sample <- c(
   first_publication_date,
   as.Date("2023-01-01"),
   as.Date("2024-01-01"),
-  as.Date("2025-01-01")
+  as.Date("2025-01-01"),
+  as.Date("2026-01-01")
 )
 
 
@@ -130,7 +136,8 @@ sample_file <- data.frame(
     "2022_FE_1_2022M032EC-s5v18.csv",
     "2023_FE_4_8.5_20240115.csv",
     "2024_FE_2_1.7_20250120.csv",
-    "2025_FE_3_1.3_20260121.csv"
+    "2025_FE_3_1.3_20260128.csv",
+    "2026_FE_0_1.0_20260216.csv"
   ),
   encoding = "UTF-8",
   date_beg = date_sample,
@@ -221,19 +228,19 @@ exped_imput_file <- data.frame(
 intro_ventil_file <- data.frame(
   directory = input_directory,
   files = c(
-    "intro_ventil_2021.csv", "intro_ventil_2022.csv",
-    "intro_ventil_2023.csv", "intro_ventil_2024.csv",
-    "intro_ventil_2025.csv"
+    "intro_ventil_2022.csv", "intro_ventil_2023.csv",
+    "intro_ventil_2024.csv", "intro_ventil_2025.csv",
+    "intro_ventil_2026.csv"
   ),
   encoding = "UTF-8",
   skiprows = 0,
   dec = ",",
   start = c(
-    as_date("2021-01-01"),
     as_date("2022-01-01"),
     as_date("2023-01-01"),
     as_date("2024-01-01"),
-    as_date("2025-01-01")
+    as_date("2025-01-01"),
+    as_date("2026-01-01")
   ),
   end = date_ref,
   astrineo_input = T
@@ -262,9 +269,9 @@ exped_ventil_file <- data.frame(
   skiprows = c(15, 15, 14),
   dec = ",",
   start = c(
-    as_date("2021-01-01"),
-    as_date("2023-01-01"),
-    as_date("2025-01-01")
+    as_date("2022-01-01"),
+    as_date("2024-01-01"),
+    as_date("2026-01-01")
   ),
   end = date_ref,
   astrineo_input = T
@@ -286,12 +293,15 @@ ER_file <- data.frame(
 )
 
 
+
 ca3_file <- data.frame(
   files = c("Donnees_mensuelles.csv"),
   directory = input_directory
 )
 
-base_CA3 <- "~/dsece-imputation-nr/CA3 Parquet/"
+
+# base_CA3 <- "~/dsece-imputation-nr/CA3 Parquet/"
+base_CA3 <- "../dsece-imputation-nr/CA3 Parquet/"
 
 test_last_CA3(base_CA3 = base_CA3, date_ref = date_ref)
 
@@ -301,19 +311,32 @@ base_historique <- file.path(historical_directory, "base_parquet/")
 test_last_simulation(base_historique = base_historique, date_ref = date_ref)
 
 
+
 gazelec_file <- data.frame(
-  files = sprintf("DEB_gazélec_%s.xlsx", format(date_ref, "%Y%m")),
+  files = sprintf("DEB_gazélec_%s.csv", format(date_ref, "%Y%m")),
   directory = input_directory,
-  skiprows = 3
+  skiprows = 0,
+  dec = ";",
+  encoding = "UTF-8"
 )
+
 
 pass_names <- c("annee", "ngp9", "cpf6", "a17", "a38", "a129", "cpfrev1", "nes114", "ctci")
 
 pass_file <- data.frame(
-  files = c("11- fichier POLYCO2021.xls", "11- POLYCO2022.xls", "11_POLYCO2023_b.xlsx", "11_POLYCO2024_b.xlsx", "11_POLYCO2025.xls"),
+  files = c(
+    "11- fichier POLYCO2021.xls",
+    "11- POLYCO2022.xls",
+    "11_POLYCO2023_b.xlsx",
+    "11_POLYCO2024_b.xlsx",
+    "11_POLYCO2025.xls",
+    "11_POLYCO2026_sans_NC_supprimées_2025.xlsx"
+  ),
   skiprows = 1,
-  directory = c("P:/stat/01_etudes-methodes/@commun/EMEBI/traitement non-réponse/data"),
-  year = c(2021, 2022, 2023, 2024, 2025),
+  directory = c(
+    "P:/stat/01_etudes-methodes/@commun/EMEBI/traitement non-réponse/data"
+  ),
+  year = c(2021, 2022, 2023, 2024, 2025, 2026),
   cols = "A:I"
 )
 
