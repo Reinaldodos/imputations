@@ -705,31 +705,46 @@ setMethod(
           subset = (year == year(object@date_ref)),
           select = c(nc8, a129)
         )
-      gazelec_data <- import_input(object@gazelec, object@gazelec$files) %>%
+      gaz_names <- c(
+        "mois", "annee", "nomenclature_nc8", "numtva_redevable", "regime",
+        "mode_de_transport", "pays_origine", "pays_de_provenance", "numtva_client", "pays_de_destination",
+        "valeur", "masse_nette_quantite", "unites_supplementaires", "nature_transaction", "departement"
+      )
+
+      gazelec_data <- import_input(input_object@gazelec, input_object@gazelec$files)
+
+      colnames(gazelec_data) <- gaz_names
+
+      gazelec_data <- gazelec_data %>%
         mutate(
           across(
-            c(valeur, masse_nette_quantit_u_fffd, unit_s_suppl_u_fffd_mentaires),
+            c(valeur, masse_nette_quantite, unites_supplementaires),
             ~ parse_number(.x, locale = locale(decimal_mark = ","))
           )
         ) %>%
         mutate(
-          period = make_date(year = ann_e, month = mois, day = 1),
-          n_tva = str_replace_all(n_tva_du_redevable, " ", ""),
-          siren = str_sub(n_tva_du_redevable, -9, -1),
-          regdem = str_sub(as.character(r_gime), 1, 2),
-          flux = ifelse(test = (str_sub(as.character(r_gime), 1, 1) == "1"),
+          period = make_date(year = annee, month = mois, day = 1),
+          n_tva = str_replace_all(numtva_redevable, " ", ""),
+          siren = str_sub(numtva_redevable, -9, -1),
+          regdem = str_sub(as.character(regime), 1, 2),
+          flux = ifelse(test = (str_sub(as.character(regime), 1, 1) == "1"),
             yes = "I",
             no = "E"
           ),
           dist_prediction = as.numeric(as.character(valeur)),
           method = "reglementation",
           method_ref = "reglementation",
-          period_last = NA, payp = pays_de_provenance,
-          pyod = pays_de_destination, conf = NA,
+          period_last = NA,
+          payp = pays_de_provenance,
+          pyod = case_when(
+            flux == "I" ~ pays_de_provenance,
+            TRUE ~ pays_de_destination
+          ),
+          conf = NA,
           endo = NA, sum_endo = NA, ratio = NA,
           temo = as.character(mode_de_transport),
           natr = as.character(nature_transaction),
-          dept = as.character(d_partement),
+          dept = as.character(departement),
           nc8 = str_pad(
             string = as.character(nomenclature_nc8),
             width = 8, side = "left", pad = "0"
