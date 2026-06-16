@@ -81,7 +81,7 @@ msd <-
     "MSD.arrow"
   ) %>%
   arrow::read_feather() |>
-  filter(siren != "405395518")
+  filter(siren != "405395518") # neutraliser NIKE RETAIL
 
 
 
