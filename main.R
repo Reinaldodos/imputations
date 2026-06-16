@@ -18,9 +18,11 @@ memory.limit(9e12)
 # ETL INPUT FILES ---------------------------------------------------------
 
 if (!dir.exists(ETL_directory)) {
-  source(file = "Refactoring/import et prep.R",
-         encoding = "UTF-8",
-         echo = TRUE)
+  source(
+    file = "Refactoring/import et prep.R",
+    encoding = "UTF-8",
+    echo = TRUE
+  )
 }
 
 # IMPORT INPUT FILES ------------------------------------------------------
@@ -78,7 +80,10 @@ msd <-
     ETL_directory,
     "MSD.arrow"
   ) %>%
-  arrow::read_feather()
+  arrow::read_feather() |>
+  filter(siren != "405395518") # neutraliser NIKE RETAIL
+
+
 
 if (!dir.exists(pipeline_directory)) {
   source(
@@ -95,12 +100,12 @@ exogenous_intro <-
   ) %>%
   arrow::read_feather()
 
-detail_intro <- 
+detail_intro <-
   file.path(
     pipeline_directory,
     "detail_intro"
   ) %>%
-  arrow::open_dataset() %>% 
+  arrow::open_dataset() %>%
   collect()
 
 detail_exped <-
@@ -108,7 +113,7 @@ detail_exped <-
     pipeline_directory,
     "detail_exped"
   ) %>%
-  arrow::open_dataset() %>% 
+  arrow::open_dataset() %>%
   collect()
 
 endogenous_intro <-
@@ -117,7 +122,7 @@ endogenous_intro <-
     "endogenous_intro.arrow"
   ) %>%
   arrow::read_feather()
-  
+
 endogenous_exped <-
   file.path(
     pipeline_directory,
@@ -149,7 +154,7 @@ print(Sys.time() - start)
 # PRODUCTION ------------------------------------------------------
 
 # source("programs/launch_production.R", encoding = "UTF-8")
-# 
+#
 # source("programs/imputations_NATR.R", encoding = "UTF-8")
 # source("programs/imputations_transport48Kv2.R", encoding = "UTF-8")
 # source("programs/prgm_C3290.R", encoding = "UTF-8")
