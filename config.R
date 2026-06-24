@@ -11,7 +11,7 @@ c(
 
 # DATE ------------------------------------------------------
 
-date_ref <- as_date("2026-04-01")
+date_ref <- as_date("2026-05-01")
 nb_date_prediction <- 2
 first_publication_date <- as_date("2022-01-01")
 date_prediction <- seq.Date(
@@ -137,7 +137,7 @@ sample_file <- data.frame(
     "2023_FE_4_8.5_20240115.csv",
     "2024_FE_2_1.7_20250120.csv",
     "2025_FE_3_1.3_20260128.csv",
-    "2026_FE_0_1.3_20260521.csv"
+    "2026_FE_1_1.0_20260615.csv"
   ),
   encoding = "UTF-8",
   date_beg = date_sample,
@@ -356,7 +356,7 @@ cniv_file <- data.frame(
     input_directory
   ),
   type = c("confederation_to_ngp", "client", "reference", "input"),
-  skiprows = c(0, 1, 0, 16),
+  skiprows = c(0, 1, 0, 19),
   start = make_date(year = min(y) - 1, month = 1, day = 1),
   end = date_ref,
   dec = ",",
