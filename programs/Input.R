@@ -718,7 +718,7 @@ setMethod(
       gazelec_data <- gazelec_data %>%
         mutate(
           across(
-            c(valeur, masse_nette_quantite, unites_supplementaires),
+            c(valeur, unites_supplementaires),
             ~ parse_number(.x, locale = locale(decimal_mark = ","))
           )
         ) %>%
