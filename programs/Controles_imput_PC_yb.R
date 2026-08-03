@@ -209,8 +209,10 @@ list_i_siren10M <-
   ) %>%
   arrange("period", desc("prediction"))
 
-intro_sample <- sample_intro %>%
-  arrange(siren, date_beg) %>%
+intro_sample <- sample %>%
+  filter(deb_intro == 1) %>%
+  distinct(siren, numtva, date_beg) %>%
+  arrange(siren, numtva, date_beg) %>%
   distinct(siren, .keep_all = T)
 
 list_i_siren10M <- list_i_siren10M %>% left_join(intro_sample, by = c("siren"))
@@ -230,8 +232,10 @@ list_e_siren10M <- list_e_siren10M %>%
   ) %>%
   arrange("period", desc("prediction"))
 
-exped_sample <- sample_exped %>%
-  arrange(siren, date_beg) %>%
+exped_sample <- sample %>%
+  filter(deb_expe == 1) %>%
+  distinct(siren, numtva, date_beg) %>%
+  arrange(siren, numtva, date_beg) %>%
   distinct(siren, .keep_all = T)
 
 list_e_siren10M <- list_e_siren10M %>% left_join(exped_sample, by = c("siren"))

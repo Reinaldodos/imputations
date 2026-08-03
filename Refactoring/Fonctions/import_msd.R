@@ -32,8 +32,8 @@ import_msd <- function(data) {
           )
         )
     )) %>%
-    select(data) %>%
     unnest(cols = c(data)) %>%
+    filter(Statut == "Actif") %>%
     group_by(siren, Flux) %>%
     reframe(period = unique(period)) %>%
     mutate(flux = Flux %>%
