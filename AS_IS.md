@@ -690,3 +690,40 @@ ne sont pas démontrables statiquement.
 
 Ce rapport s'arrête aux phases 1 à 5. Aucun To-be ni changement de code n'est
 inclus.
+
+## Mise à jour de périmètre — décision de baseline `main.R`
+
+**DÉCISION HUMAINE ACTÉE —** `main.R` est la baseline officielle à migrer. Le
+comportement de référence pour les tests de non-régression est le chemin actif
+statiquement atteignable depuis `main.R`.
+
+Le périmètre de compatibilité comprend donc `config.R`, les modules chargés par
+`main.R`, les préparations ETL/pipeline conditionnelles, les chaînes
+introduction et expédition, les contrôles PC et CNIV. Les fonctions et fichiers
+ne sont inclus que lorsqu'une dépendance active depuis ce chemin est observée.
+
+Les scripts explicitement commentés ou non sourcés depuis `main.R` — notamment
+`launch_production.R`, `launch_request.R`, les variantes historiques et les
+scripts `old/` — sont hors périmètre de compatibilité, sauf découverte
+ultérieure d'une dépendance active. Cette décision ferme leur statut comme
+question de migration ; leur éventuel usage opérationnel, leur maintenance ou
+la présence de secrets restent des sujets séparés.
+
+Cette décision modifie les conclusions de l'audit de la manière suivante :
+
+- A3, A7 et A14 ne sont plus des blockers de compatibilité : ils décrivent des
+  branches non atteignables depuis la baseline, sauf dépendance active à
+  découvrir ;
+- A9 et A10 sont hors périmètre fonctionnel de la migration :
+  `launch_request.R` et ses identifiants restent un sujet opérationnel ou de
+  sécurité, mais ne définissent pas le comportement de référence de `main.R` ;
+- les questions conservées pour la migration portent sur le chemin actif,
+  notamment caches, artefacts ETL/pipeline/RDS, inputs actifs, outputs aval et
+  asymétrie de ventilation expédition 21/29 ;
+- l'absence d'ordonnanceur externe dans le dépôt ne remet plus en cause le
+  choix de l'entry point, puisque celui-ci est désormais confirmé par décision
+  humaine.
+
+La cartographie As-is et ses faits observés restent inchangés pour le chemin
+actif. Aucun comportement métier des méthodes NR ou de la ventilation n'est
+réinterprété par cette décision.

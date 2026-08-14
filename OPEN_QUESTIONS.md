@@ -1,389 +1,308 @@
-# Phase 5 ter — Résolution des inconnues
+# Phase 5 ter — Questions ouvertes après décision de baseline
 
-## 1. Périmètre et méthode
+## 1. Périmètre de compatibilité
 
-Ce rapport couvre les inconnues et questions ouvertes relevées dans
-`AS_IS.md` et `BUSINESS_LOGIC_AS_IS.md`. L'analyse est statique : aucun
-pipeline R n'a été exécuté et aucune donnée externe n'a été consultée.
+**Décision humaine actée :** `main.R` est la baseline officielle à migrer. Le
+comportement de référence est le chemin actif statiquement atteignable depuis
+`main.R`.
 
-Les états utilisés sont :
+Le périmètre de compatibilité comprend :
 
-- **RÉSOLU STATIQUEMENT** : le dépôt permet de répondre précisément ;
-- **PARTIELLEMENT RÉSOLU** : le code établit une partie du fait, mais pas son
-  intention ou son usage opérationnel ;
-- **À POSER À UN HUMAIN** : la réponse dépend de la production, de données
-  externes ou d'une décision métier non présente dans le dépôt.
+- `config.R` ;
+- `programs/Production.R` et `programs/CNIV.R` lorsqu'ils sont chargés par
+  `main.R` ;
+- la préparation ETL conditionnelle ;
+- la préparation pipeline conditionnelle ;
+- les chaînes introduction et expédition ;
+- les contrôles PC ;
+- le traitement CNIV ;
+- les fonctions et dépendances effectivement atteignables depuis ces étapes.
 
-Les impacts décrivent les conséquences pour les travaux ultérieurs. Ils ne
-constituent pas des propositions To-be.
+Les scripts non atteignables depuis `main.R` sont hors périmètre de
+compatibilité, sauf découverte ultérieure d'une dépendance active. Leur usage
+éventuel, leur statut historique et leurs secrets restent des sujets
+opérationnels ou de sécurité, mais ne constituent plus des blockers de
+caractérisation ou de migration de la baseline.
 
-## 2. Synthèse par criticité
+États utilisés :
+
+- **RÉSOLU STATIQUEMENT** : établi par le dépôt ;
+- **PARTIELLEMENT RÉSOLU** : le comportement du chemin `main.R` est établi,
+  mais une règle opérationnelle ou métier externe reste ouverte ;
+- **À POSER À UN HUMAIN** : décision absente du dépôt et nécessaire pour fermer
+  le contrat fonctionnel ou opérationnel.
+
+## 2. Synthèse des criticités
 
 ### BLOCKER
 
-- processus et entry point officiellement exécutés ;
-- producteur officiel des inputs ;
-- contrat des artefacts et caches ;
-- règle métier de ventilation du résultat expédition incluant le régime 29 ;
-- statut actif des identifiants PostgreSQL.
+- `OQ-03` — validité et invalidation des caches actifs ;
+- `OQ-12` — règle de ventilation du résultat expédition incluant le régime 29 ;
+- `OQ-13` — intention métier de l'utilisation de `vart_21` ;
+- `OQ-16` — statut contractuel des artefacts lus par le chemin actif.
+
+Ces questions peuvent modifier les résultats de référence ou empêcher de
+préserver le comportement observable de `main.R`.
 
 ### IMPORTANT
 
-- invalidation des caches ;
-- statut des scripts hors chemin principal ;
-- ordre de chargement externe ;
-- disponibilité officielle des chemins réseau ;
-- comportement attendu des cas limites de ventilation ;
-- rôle aval des exports ;
-- versions nécessaires à la reproductibilité opérationnelle.
+- `OQ-02` — dépendances S4 encore atteignables ;
+- `OQ-06` — chemins et environnement d'inputs actifs ;
+- `OQ-11` — provenance et version des inputs ;
+- `OQ-14` — outputs contractuels et usages aval ;
+- `OQ-15` — cas limites des ratios de ventilation ;
+- `OQ-17` — intégrité des dossiers ETL/pipeline ;
+- `OQ-18` — versions R/packages validées ;
+- `OQ-21` — validation aval des contrôles et sorties CNIV.
 
 ### SECONDARY
 
-- fonctions S4 historiques encore nécessaires selon les usages ;
-- statut de support des fichiers anciens ;
-- règles de production et version des inputs ;
-- volumes et détails opérationnels non définis dans le dépôt.
+- `OQ-01` — ordonnancement externe, une fois `main.R` confirmé ;
+- `OQ-05` — relances partielles et ordre opérationnel ;
+- `OQ-07` — documentation de publication externe ;
+- `OQ-20` — volumes et contraintes de charge.
 
-## 3. Questions et résolutions détaillées
+Les questions `OQ-04`, `OQ-08`, `OQ-09`, `OQ-10` et `OQ-19` sont fermées pour
+la compatibilité : elles concernent des scripts non atteignables depuis la
+baseline. `launch_request.R` conserve un signalement de sécurité hors
+périmètre fonctionnel, sans blocker de migration.
 
-### OQ-01 — Entry point et ordonnancement réellement utilisés
+## 3. Questions restantes
+
+### OQ-01 — Ordonnancement externe
 
 - **ID** : OQ-01
-- **CRITICITÉ** : BLOCKER
-- **QUESTION** : Quel est l'entry point et l'ordonnancement officiellement
-  utilisés en production aujourd'hui ?
-- **SOURCE** : `AS_IS.md:350-352`, `AS_IS.md:687-689` ; `main.R:4-169`.
-- **ÉTAT** : À POSER À UN HUMAIN
-- **INVESTIGATION STATIQUE** : `main.R` est le seul entry point principal
-  observable. Aucun ordonnanceur, workflow, CI/CD, Makefile, manifeste ou
-  autre script d'appel n'est présent dans le dépôt. Les scripts hors de
-  `main.R` ne peuvent pas être déclarés inexistants dans l'exploitation réelle.
-- **RÉPONSE OU QUESTION HUMAINE EXACTE** : « Quel est l'entry point et
-  l'ordonnancement officiellement utilisés en production aujourd'hui ? »
-- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : le processus documenté peut omettre
-  des étapes ou inclure des étapes non exécutées.
-- **IMPACT — TESTS DE CARACTÉRISATION** : les tests pourraient caractériser le
-  mauvais scénario d'exécution.
-- **IMPACT — ARCHITECTURE TO-BE** : les frontières d'exécution et les
-  responsabilités externes resteraient indéterminées.
-- **IMPACT — PLAN DE MIGRATION** : impossible de définir une séquence de
-  remplacement fiable ni de choisir le point de bascule.
+- **CRITICITÉ** : SECONDARY
+- **QUESTION** : Existe-t-il un ordonnanceur externe ou une procédure manuelle
+  qui lance `main.R` avec des conditions particulières ?
+- **SOURCE** : `main.R:4-169` ; ancienne question `AS_IS.md:350-352`.
+- **ÉTAT** : PARTIELLEMENT RÉSOLU
+- **INVESTIGATION STATIQUE** : `main.R` est officiellement confirmé comme
+  baseline. Son ordre interne est observable ; aucun ordonnanceur externe n'est
+  présent dans le dépôt.
+- **RÉPONSE OU QUESTION HUMAINE EXACTE** : « Existe-t-il des contraintes
+  externes de lancement de `main.R` qui ne sont pas nécessaires à l'exécution
+  complète du chemin baseline ? »
+- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : aucun impact sur la règle métier du
+  chemin complet ; possible complément documentaire d'exploitation.
+- **IMPACT — TESTS DE CARACTÉRISATION** : aucun impact sur les tests du chemin
+  complet ; impact éventuel sur les tests de lancement.
+- **IMPACT — ARCHITECTURE TO-BE** : aucun blocage fonctionnel ; les interfaces
+  avec l'ordonnanceur restent hors dépôt.
+- **IMPACT — PLAN DE MIGRATION** : peut affecter le déploiement, pas la
+  migration du comportement baseline.
 
-### OQ-02 — Fonctions S4 d'import encore nécessaires
+### OQ-02 — Dépendances S4 encore atteignables
 
 - **ID** : OQ-02
-- **CRITICITÉ** : SECONDARY
-- **QUESTION** : Quelles fonctions S4 d'import sont encore nécessaires au-delà
-  de `Input(...)` et des appels CNIV ?
-- **SOURCE** : `AS_IS.md:509-510` ; `programs/Input.R:270-862` ;
-  `programs/NR.R:1202-1218,1273` ; `programs/launch_cniv.R:9-22` ;
+- **CRITICITÉ** : IMPORTANT
+- **QUESTION** : Quelles méthodes S4 atteignables depuis `main.R` sont encore
+  nécessaires dans les scénarios actifs ?
+- **SOURCE** : `main.R:4-169` ; `programs/Input.R:270-862` ;
+  `programs/NR.R:1202-1218,1272-1274` ; `programs/launch_cniv.R:9-22` ;
   `Refactoring/prep pipeline.R:5-87`.
 - **ÉTAT** : PARTIELLEMENT RÉSOLU
-- **INVESTIGATION STATIQUE** : les fonctions historiques sont encore appelées
-  dans `Input.R`, `NR.R` et `launch_cniv.R`. Les fonctions fonctionnelles de
-  `Refactoring/` sont aussi appelées par les préparations conditionnelles.
-  Le dépôt établit donc une coexistence, mais pas quels appels sont utilisés
-  dans tous les scénarios opérationnels.
-- **RÉPONSE OU QUESTION HUMAINE EXACTE** : « Les appels S4 d'import de
-  `Input.R` et `NR.R` sont-ils encore exécutés en production, ou seulement
-  conservés pour des relances et compatibilités historiques ? »
-- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : plusieurs chaînes d'import pourraient
-  être considérées à tort comme une seule règle métier.
-- **IMPACT — TESTS DE CARACTÉRISATION** : il faudrait couvrir une chaîne
-  historique et une chaîne `Refactoring` si les deux sont supportées.
-- **IMPACT — ARCHITECTURE TO-BE** : les interfaces réellement contractuelles
-  des imports ne sont pas identifiées.
-- **IMPACT — PLAN DE MIGRATION** : le périmètre de remplacement des méthodes
-  S4 ne peut pas être fermé.
+- **INVESTIGATION STATIQUE** : le chemin baseline atteint `Input.R`, `NR.R`,
+  `launch_cniv.R` et, conditionnellement, les fonctions `Refactoring/`. Les
+  appels historiques atteignables sont identifiés ; leur nécessité dans tous
+  les états de fichiers ne l'est pas.
+- **RÉPONSE OU QUESTION HUMAINE EXACTE** : « Parmi les méthodes S4 appelées par
+  le chemin `main.R`, lesquelles sont contractuellement supportées dans les
+  relances et lesquelles ne servent qu'à une branche conditionnelle ? »
+- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : certaines étapes d'import ou de reprise
+  peuvent avoir plusieurs comportements actifs.
+- **IMPACT — TESTS DE CARACTÉRISATION** : il faut couvrir les méthodes S4
+  atteignables dans les branches réellement supportées.
+- **IMPACT — ARCHITECTURE TO-BE** : les interfaces fonctionnelles à préserver
+  ne sont pas entièrement fermées.
+- **IMPACT — PLAN DE MIGRATION** : risque de retirer une dépendance active de
+  `Input`, `NR` ou CNIV.
 
-### OQ-03 — Invalidation des caches
+### OQ-03 — Fraîcheur et invalidation des caches actifs
 
 - **ID** : OQ-03
-- **CRITICITÉ** : IMPORTANT
-- **QUESTION** : Qui invalide les caches après changement de configuration ou
-  d'input ?
-- **SOURCE** : `AS_IS.md:521-522` ; `programs/NR.R:953-974,1149-1167,
-  1190-1239,1291-1325,1372-1384` ; `main.R:20-26,88-94`.
-- **ÉTAT** : RÉSOLU STATIQUEMENT pour le code, À POSER À UN HUMAIN pour la
-  procédure opérationnelle
-- **INVESTIGATION STATIQUE** : aucune invalidation par date, paramètres, hash,
-  taille ou mtime n'est codée. `file.exists()` décide seul entre lecture et
-  recalcul pour les caches RDS ; `dir.exists()` décide seul pour `ETL/` et
-  `pipeline/`. Le dépôt ne montre aucun nettoyeur ou contrôle d'intégrité.
-- **RÉPONSE OU QUESTION HUMAINE EXACTE** : « Quelle procédure opérationnelle
-  supprime ou invalide les caches `ETL`, `pipeline` et `output_PC` après un
-  changement d'input ou de paramètre ? »
-- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : les résultats peuvent dépendre d'un
-  état persistant non déclaré.
-- **IMPACT — TESTS DE CARACTÉRISATION** : les tests doivent distinguer premier
-  calcul, reprise d'un cache valide et reprise d'un cache obsolète.
-- **IMPACT — ARCHITECTURE TO-BE** : le rôle cache/interface des artefacts ne
-  peut pas être défini uniquement par le code.
-- **IMPACT — PLAN DE MIGRATION** : une migration pourrait réutiliser des
-  artefacts incompatibles ou modifier silencieusement les résultats.
-
-### OQ-04 — Scripts réellement utilisés hors `main.R`
-
-- **ID** : OQ-04
-- **CRITICITÉ** : IMPORTANT
-- **QUESTION** : Quels scripts hors `main.R` sont encore supportés et exécutés ?
-- **SOURCE** : `AS_IS.md:533-534,587-588` ; `main.R:154-160` ;
-  `programs/launch_production.R`, `launch_request.R`, `programs/old/*`,
-  `Controles_imput_C.R`, `CNIV_zero_mois.R`.
+- **CRITICITÉ** : BLOCKER
+- **QUESTION** : Quelle règle détermine qu'un cache actif de `main.R` est valide
+  ou doit être reconstruit ?
+- **SOURCE** : `main.R:20-26,88-94` ; `programs/NR.R:953-974,1149-1167,
+  1190-1239,1291-1325,1372-1384`.
 - **ÉTAT** : PARTIELLEMENT RÉSOLU
-- **INVESTIGATION STATIQUE** : aucun de ces scripts n'est sourcé par le chemin
-  principal. `launch_production.R` est explicitement commenté ;
-  `launch_request.R` contient une chaîne PostgreSQL ; les scripts anciens
-  contiennent des traitements autonomes. Leur support opérationnel n'est pas
-  documenté.
-- **RÉPONSE OU QUESTION HUMAINE EXACTE** : « Quels scripts hors `main.R` sont
-  encore supportés, exécutés ou nécessaires aux relances de production ? »
-- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : des sorties ou contrôles absents du
-  chemin principal peuvent être requis par le processus réel.
-- **IMPACT — TESTS DE CARACTÉRISATION** : le périmètre des scénarios à tester
-  resterait incomplet.
-- **IMPACT — ARCHITECTURE TO-BE** : impossible de distinguer les composants
-  actifs des archives ou outils manuels.
-- **IMPACT — PLAN DE MIGRATION** : risque de supprimer un flux encore utilisé.
+- **INVESTIGATION STATIQUE** : le code utilise `dir.exists()` pour ETL/pipeline
+  et `file.exists()` pour les RDS. Aucun contrôle de date, hash, paramètres,
+  taille ou mtime n'est codé.
+- **RÉPONSE OU QUESTION HUMAINE EXACTE** : « Dans la baseline `main.R`, quelle
+  procédure ou convention garantit qu'un artefact ETL, pipeline ou RDS est
+  cohérent avec les inputs et paramètres courants ? »
+- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : le résultat de référence dépend
+  potentiellement de l'état préalable du filesystem.
+- **IMPACT — TESTS DE CARACTÉRISATION** : il faut caractériser premier calcul,
+  reprise valide et reprise d'un cache obsolète.
+- **IMPACT — ARCHITECTURE TO-BE** : le statut et la validité des caches actifs
+  ne peuvent pas être déduits du seul nom de fichier.
+- **IMPACT — PLAN DE MIGRATION** : une migration peut produire des écarts en
+  réutilisant ou invalidant différemment les artefacts.
 
-### OQ-05 — Ordre de chargement externe
+### OQ-05 — Relances partielles et ordre opérationnel
 
 - **ID** : OQ-05
-- **CRITICITÉ** : IMPORTANT
-- **QUESTION** : L'ordre de chargement est-il garanti par un ordonnanceur
-  externe ou par une procédure manuelle ?
-- **SOURCE** : `AS_IS.md:547-548` ; `main.R:4-169` ;
-  `programs/launch_introduction.R:4`, `launch_expedition.R:4`.
+- **CRITICITÉ** : SECONDARY
+- **QUESTION** : Les relances partielles de `main.R` sont-elles autorisées et
+  lesquelles doivent être supportées ?
+- **SOURCE** : `main.R:20-169` ; ancienne question `AS_IS.md:547-548`.
 - **ÉTAT** : PARTIELLEMENT RÉSOLU
-- **INVESTIGATION STATIQUE** : dans le chemin visible, l'ordre est imposé par
-  les `source()` séquentiels et les objets globaux. Aucun mécanisme externe ne
-  figure dans le dépôt.
-- **RÉPONSE OU QUESTION HUMAINE EXACTE** : « L'ordre `config` → ETL → pipeline
-  → introduction → expédition → contrôles → CNIV est-il garanti par une
-  procédure officielle, et existe-t-il des exécutions partielles autorisées ? »
-- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : la dépendance à l'ordre et aux objets
-  de session peut être sous-documentée.
-- **IMPACT — TESTS DE CARACTÉRISATION** : il faut tester les démarrages propres
-  et les relances partielles si elles sont autorisées.
-- **IMPACT — ARCHITECTURE TO-BE** : les contrats entre étapes ne sont pas
-  entièrement déterminables.
-- **IMPACT — PLAN DE MIGRATION** : une migration non séquentielle pourrait
-  changer les effets de bord et les résultats.
+- **INVESTIGATION STATIQUE** : l'ordre du chemin complet est fixé par `main.R` :
+  configuration, ETL conditionnel, pipeline conditionnel, introduction,
+  expédition, contrôles, CNIV. Les relances partielles ne sont pas définies
+  par un mécanisme dédié.
+- **RÉPONSE OU QUESTION HUMAINE EXACTE** : « Quelles relances partielles du
+  chemin `main.R` sont officiellement autorisées et quels artefacts peuvent
+  être réutilisés dans chacune ? »
+- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : aucun impact sur l'exécution complète,
+  mais les scénarios de reprise restent incomplets.
+- **IMPACT — TESTS DE CARACTÉRISATION** : les tests de reprise ne peuvent pas
+  être fermés sans cette information.
+- **IMPACT — ARCHITECTURE TO-BE** : faible impact sur le calcul nominal ;
+  impact sur les interfaces de relance.
+- **IMPACT — PLAN DE MIGRATION** : concerne surtout la continuité opérationnelle.
 
-### OQ-06 — Chemins officiellement disponibles
+### OQ-06 — Chemins et environnement des inputs actifs
 
 - **ID** : OQ-06
 - **CRITICITÉ** : IMPORTANT
-- **QUESTION** : Quels chemins sont disponibles selon les régimes de
-  production (local, VPN, partage, Kayzer) ?
-- **SOURCE** : `AS_IS.md:559-560` ; `README.md:20-28,31-39` ;
-  `config.R:66-117,163-199,315-364` ;
-  `programs/Controles_imput_PC_yb.R:22-23`.
+- **QUESTION** : Quels chemins locaux, réseau, VPN et Kayzer sont officiellement
+  requis par le chemin `main.R` ?
+- **SOURCE** : `config.R:66-117,163-364` ;
+  `programs/Controles_imput_PC_yb.R:17-23` ; `README.md:20-39`.
 - **ÉTAT** : PARTIELLEMENT RÉSOLU
-- **INVESTIGATION STATIQUE** : les chemins codés et leurs rôles sont
-  identifiables, notamment `input`, `output_PC`, lecteur `P:`, CA3 relatif et
-  chemin SIRENE Windows. Leur disponibilité effective et les variantes par
-  poste ne sont pas dans le dépôt.
-- **RÉPONSE OU QUESTION HUMAINE EXACTE** : « Quels chemins locaux, réseau,
-  VPN et Kayzer sont officiellement requis et disponibles pour chaque étape de
-  la production ? »
-- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : la définition des inputs et outputs
-  opérationnels reste incomplète.
-- **IMPACT — TESTS DE CARACTÉRISATION** : les tests de reproductibilité ne
-  peuvent pas fixer un environnement cible.
-- **IMPACT — ARCHITECTURE TO-BE** : les frontières I/O et les dépendances
-  d'environnement restent ouvertes.
-- **IMPACT — PLAN DE MIGRATION** : risque de rupture d'accès aux données ou aux
-  exports lors du changement de poste ou d'exécution.
+- **INVESTIGATION STATIQUE** : les chemins consommés par la baseline sont
+  identifiés, notamment `input`, `ETL`, `pipeline`, `output_PC`, le partage
+  `P:` et le chemin SIRENE Windows. Leur disponibilité réelle n'est pas dans
+  le dépôt.
+- **RÉPONSE OU QUESTION HUMAINE EXACTE** : « Quel environnement d'exécution
+  est officiellement supporté pour le chemin `main.R`, et quels chemins sont
+  obligatoires à chaque étape ? »
+- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : la provenance et la destination des
+  données restent partiellement externes.
+- **IMPACT — TESTS DE CARACTÉRISATION** : l'environnement des fixtures et des
+  tests d'intégration n'est pas complètement défini.
+- **IMPACT — ARCHITECTURE TO-BE** : les contrats I/O et dépendances système
+  restent à confirmer.
+- **IMPACT — PLAN DE MIGRATION** : risque de rupture de lecture ou d'export.
 
-### OQ-07 — Processus opérationnel faisant foi
+### OQ-07 — Publication et validation externe
 
 - **ID** : OQ-07
-- **CRITICITÉ** : BLOCKER
-- **QUESTION** : Quelle version du processus opérationnel fait foi ?
-- **SOURCE** : `AS_IS.md:574-575` ; `README.md:8-18` ; commentaires et appels
-  commentés dans `launch_introduction.R:78-86` et `launch_expedition.R:99-154`.
+- **CRITICITÉ** : SECONDARY
+- **QUESTION** : Quels aspects de publication ou de copie externe du chemin
+  `main.R` sont obligatoires après production ?
+- **SOURCE** : `README.md:31-39` ; `main.R:163-169` ; appels commentés dans
+  `launch_introduction.R:78-86` et `launch_expedition.R:99-154`.
 - **ÉTAT** : À POSER À UN HUMAIN
-- **INVESTIGATION STATIQUE** : le README décrit des copies réseau et locales,
-  tandis que plusieurs appels de copie réseau sont commentés dans le code.
-  Aucun document opérationnel complet n'est présent dans le dépôt.
-- **RÉPONSE OU QUESTION HUMAINE EXACTE** : « Quelle procédure opérationnelle
-  validée fait foi lorsque la documentation et les appels actifs/commentés
-  divergent ? »
-- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : les outputs réellement contractuels
-  peuvent être mal identifiés.
-- **IMPACT — TESTS DE CARACTÉRISATION** : les tests pourraient valider des
-  fichiers non livrés ou manquer des copies obligatoires.
-- **IMPACT — ARCHITECTURE TO-BE** : les responsabilités de livraison et de
-  publication restent indéterminées.
-- **IMPACT — PLAN DE MIGRATION** : le critère de non-régression opérationnelle
-  ne peut pas être défini.
+- **INVESTIGATION STATIQUE** : la baseline de calcul est fixée, mais le dépôt
+  ne permet pas de trancher entre les copies réseau documentées et les copies
+  actuellement commentées.
+- **RÉPONSE OU QUESTION HUMAINE EXACTE** : « Quelles copies, publications et
+  validations externes des outputs produits par `main.R` sont obligatoires ? »
+- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : aucun changement de règle de calcul,
+  mais le périmètre de livraison reste incomplet.
+- **IMPACT — TESTS DE CARACTÉRISATION** : peut ajouter des assertions de
+  présence ou de copie, sans modifier les valeurs calculées.
+- **IMPACT — ARCHITECTURE TO-BE** : concerne les interfaces de livraison,
+  hors cœur métier.
+- **IMPACT — PLAN DE MIGRATION** : peut affecter l'acceptation opérationnelle.
 
-### OQ-08 — Statut des scripts anciens et variantes
-
-- **ID** : OQ-08
-- **CRITICITÉ** : IMPORTANT
-- **QUESTION** : Les scripts anciens doivent-ils être considérés comme
-  supportés, archivés ou non utilisés ?
-- **SOURCE** : `AS_IS.md:587-588,673-674` ; `programs/old/*`,
-  `Controles_imput_C.R`, `CNIV_zero_mois.R`, scripts de production commentés.
-- **ÉTAT** : PARTIELLEMENT RÉSOLU
-- **INVESTIGATION STATIQUE** : ces fichiers sont présents et définissent des
-  fonctions ou traitements, mais aucun appel depuis `main.R` n'est observé.
-  Le dépôt ne contient pas de marquage officiel de statut.
-- **RÉPONSE OU QUESTION HUMAINE EXACTE** : « Quels fichiers de `programs/old/`
-  et quelles variantes historiques sont officiellement hors support, et
-  lesquels doivent rester exécutables pour les relances ? »
-- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : le référentiel pourrait inclure ou
-  exclure à tort des comportements historiques.
-- **IMPACT — TESTS DE CARACTÉRISATION** : le nombre de scénarios et de sorties
-  à conserver n'est pas fixé.
-- **IMPACT — ARCHITECTURE TO-BE** : les frontières du périmètre de migration
-  restent ambiguës.
-- **IMPACT — PLAN DE MIGRATION** : risque de supprimer une capacité de reprise.
-
-### OQ-09 — Producteur officiel des inputs PostgreSQL
-
-- **ID** : OQ-09
-- **CRITICITÉ** : BLOCKER
-- **QUESTION** : `launch_request.R` est-il le producteur officiel des inputs
-  CSV ?
-- **SOURCE** : `AS_IS.md:611-612` ; `programs/launch_request.R:72-119`.
-- **ÉTAT** : PARTIELLEMENT RÉSOLU
-- **INVESTIGATION STATIQUE** : le script construit des requêtes PostgreSQL,
-  lit `request_data` depuis la configuration et écrit les CSV dans les
-  répertoires déclarés. Il n'est pas appelé par `main.R`.
-- **RÉPONSE OU QUESTION HUMAINE EXACTE** : « `launch_request.R` est-il encore
-  le producteur officiel des inputs CSV, ou les fichiers sont-ils produits par
-  une procédure externe ? »
-- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : la provenance, le filtrage et la
-  fraîcheur des inputs restent incertains.
-- **IMPACT — TESTS DE CARACTÉRISATION** : les fixtures pourraient ne pas
-  reproduire la collecte officielle.
-- **IMPACT — ARCHITECTURE TO-BE** : la frontière entre collecte et traitement
-  n'est pas définie.
-- **IMPACT — PLAN DE MIGRATION** : risque de migrer le traitement sans
-  préserver le producteur d'inputs.
-
-### OQ-10 — Statut des identifiants PostgreSQL
-
-- **ID** : OQ-10
-- **CRITICITÉ** : BLOCKER
-- **QUESTION** : Les identifiants PostgreSQL présents dans `launch_request.R`
-  sont-ils actifs, révoqués ou purement historiques ?
-- **SOURCE** : `AS_IS.md:621-622` ; `programs/launch_request.R:4-5`.
-- **ÉTAT** : À POSER À UN HUMAIN
-- **INVESTIGATION STATIQUE** : le dépôt contient des valeurs d'identifiant et
-  de mot de passe en clair. Leur validité ne peut pas être déterminée sans
-  vérification d'accès, qui est hors périmètre et non autorisée ici.
-- **RÉPONSE OU QUESTION HUMAINE EXACTE** : « Les identifiants PostgreSQL de
-  `programs/launch_request.R` sont-ils actifs, révoqués ou historiques, et
-  quelle procédure officielle doit être utilisée pour leur remplacement ou
-  leur retrait ? »
-- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : la disponibilité de la collecte par
-  ce script ne peut pas être caractérisée.
-- **IMPACT — TESTS DE CARACTÉRISATION** : aucun test ne doit dépendre d'un
-  secret dont le statut est inconnu.
-- **IMPACT — ARCHITECTURE TO-BE** : les exigences d'accès aux données restent
-  indéterminées.
-- **IMPACT — PLAN DE MIGRATION** : un secret actif, exposé ou révoqué peut
-  modifier l'urgence et le périmètre de migration.
-
-### OQ-11 — Versions d'inputs et règles de dépôt
+### OQ-11 — Provenance et version des inputs
 
 - **ID** : OQ-11
 - **CRITICITÉ** : IMPORTANT
-- **QUESTION** : Quelles versions et règles de dépôt produisent les inputs
-  opérationnels ?
-- **SOURCE** : `AS_IS.md:599-600` ; `config.R:133-364` ; `README.md:20-28`.
+- **QUESTION** : Quelle procédure produit, valide et versionne les inputs
+  consommés par `main.R` ?
+- **SOURCE** : `config.R:133-364` ; `README.md:20-28` ;
+  `main.R:57-138`.
 - **ÉTAT** : À POSER À UN HUMAIN
-- **INVESTIGATION STATIQUE** : les noms, périodes, répertoires et paramètres
-  attendus sont codés. Les règles de génération, validation, dépôt et
-  remplacement des fichiers externes ne le sont pas.
+- **INVESTIGATION STATIQUE** : les noms, périodes, répertoires et paramètres de
+  lecture sont codés. La procédure de génération, validation, dépôt et
+  remplacement des fichiers externes ne l'est pas.
 - **RÉPONSE OU QUESTION HUMAINE EXACTE** : « Quelle procédure produit, valide
-  et dépose chaque input attendu, et comment sa version est-elle identifiée ? »
+  et versionne chaque input attendu par le chemin `main.R` ? »
 - **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : la définition d'un input valide reste
   incomplète.
-- **IMPACT — TESTS DE CARACTÉRISATION** : impossible de fixer les fixtures et
-  contrôles de fraîcheur attendus.
-- **IMPACT — ARCHITECTURE TO-BE** : les contrats d'entrée ne sont pas
-  spécifiables uniquement à partir des lecteurs R.
-- **IMPACT — PLAN DE MIGRATION** : risque de changement simultané du producteur
-  et du consommateur sans possibilité d'isoler les écarts.
+- **IMPACT — TESTS DE CARACTÉRISATION** : les fixtures et contrôles de fraîcheur
+  ne peuvent pas être fixés.
+- **IMPACT — ARCHITECTURE TO-BE** : les contrats d'entrée restent incomplets.
+- **IMPACT — PLAN DE MIGRATION** : risque de confondre une différence de
+  producteur avec une différence de traitement.
 
-### OQ-12 — Ventilation expédition du régime 29
+### OQ-12 — Ventilation expédition incluant le régime 29
 
 - **ID** : OQ-12
 - **CRITICITÉ** : BLOCKER
 - **QUESTION** : Quelle règle métier doit s'appliquer à la ventilation des
   prédictions expédition du régime 29 ?
-- **SOURCE** : `AS_IS.md:635-636` ; `BUSINESS_LOGIC_AS_IS.md:668-704` ;
-  `programs/launch_expedition.R:24-55,76-84,125-151`.
+- **SOURCE** : `programs/launch_expedition.R:24-55,76-84,125-151` ;
+  `programs/NR.R:1107-1125` ; `BUSINESS_LOGIC_AS_IS.md:668-704`.
 - **ÉTAT** : PARTIELLEMENT RÉSOLU
-- **INVESTIGATION STATIQUE** : le régime 29 est estimé séparément et exporté
-  séparément. Le résultat global additionne les régimes 21 et 29, mais la
-  ventilation globale est appelée avec `expedition_21` et le détail renommé
-  `vart_21`. Aucun appel direct de ventilation 29 n'est observé.
+- **INVESTIGATION STATIQUE** : les régimes 21 et 29 sont estimés séparément,
+  puis additionnés dans `exped_imput`. La ventilation globale est appelée avec
+  `expedition_21` et le détail renommé `vart_21`. Aucun appel direct de
+  ventilation 29 n'est atteint depuis `main.R`.
 - **RÉPONSE OU QUESTION HUMAINE EXACTE** : « Les prédictions du régime 29
-  doivent-elles être ventilées directement, ventilées avec la structure 21,
-  ou rester uniquement dans l'export agrégé/par régime ? »
-- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : la règle de production des valeurs
-  ventilées expédition n'est pas fermée.
-- **IMPACT — TESTS DE CARACTÉRISATION** : les sorties 29 ventilées ne peuvent
-  pas recevoir de valeur attendue fiable.
+  doivent-elles être ventilées directement, avec la structure 21, ou rester
+  uniquement dans les exports agrégé et par régime ? »
+- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : la règle de production des ventilations
+  expédition n'est pas fermée.
+- **IMPACT — TESTS DE CARACTÉRISATION** : aucune valeur attendue fiable ne peut
+  être fixée pour la ventilation du régime 29.
 - **IMPACT — ARCHITECTURE TO-BE** : le contrat de ventilation par régime reste
   indéterminé.
-- **IMPACT — PLAN DE MIGRATION** : risque de préserver ou de corriger une
-  asymétrie sans savoir si elle est contractuelle.
+- **IMPACT — PLAN DE MIGRATION** : impossible de distinguer conservation et
+  correction de l'asymétrie actuelle.
 
-### OQ-13 — Intention de l'utilisation de `vart_21`
+### OQ-13 — Intention métier de `vart_21`
 
 - **ID** : OQ-13
 - **CRITICITÉ** : BLOCKER
-- **QUESTION** : La structure `vart_21` est-elle volontairement utilisée pour
-  ventiler le résultat expédition global incluant le régime 29 ?
-- **SOURCE** : `BUSINESS_LOGIC_AS_IS.md:683-684,720-723` ;
-  `programs/launch_expedition.R:50-55` ; `NR.R:1108-1124`.
+- **QUESTION** : L'utilisation de `vart_21` pour ventiler le résultat
+  expédition global incluant le régime 29 est-elle une règle validée ?
+- **SOURCE** : `programs/launch_expedition.R:50-55` ; `programs/NR.R:1108-1124` ;
+  `BUSINESS_LOGIC_AS_IS.md:720-723`.
 - **ÉTAT** : NON RÉSOLVABLE STATIQUEMENT
-- **INVESTIGATION STATIQUE** : le choix technique est certain :
-  `expedition_21` et `detail_exped` renommé `vart_21` sont transmis à la
-  ventilation, tandis que `exped_imput` contient la somme des deux régimes.
-  L'intention métier et la conformité attendue ne sont pas exprimées.
+- **INVESTIGATION STATIQUE** : le choix technique est établi, mais son intention
+  métier et sa conformité ne sont exprimées dans aucun fichier.
 - **RÉPONSE OU QUESTION HUMAINE EXACTE** : « L'utilisation de `vart_21` pour
   calculer les ratios de ventilation du résultat expédition global incluant le
   régime 29 est-elle une règle métier validée ? »
-- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : il est impossible de déclarer cette
-  asymétrie comme comportement requis ou anomalie.
-- **IMPACT — TESTS DE CARACTÉRISATION** : les valeurs ventilées globales ne
-  peuvent pas être comparées à une référence métier certaine.
-- **IMPACT — ARCHITECTURE TO-BE** : les données de ventilation à exposer ne
+- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : impossible de qualifier l'asymétrie
+  comme comportement requis ou anomalie.
+- **IMPACT — TESTS DE CARACTÉRISATION** : les ventilations globales ne peuvent
+  pas recevoir d'oracle métier certain.
+- **IMPACT — ARCHITECTURE TO-BE** : les données de ventilation à préserver ne
   sont pas définies.
-- **IMPACT — PLAN DE MIGRATION** : une conservation exacte et une correction
-  éventuelle conduiraient à deux migrations différentes.
+- **IMPACT — PLAN DE MIGRATION** : le choix entre reproduction stricte et
+  changement de comportement reste ouvert.
 
-### OQ-14 — Rôle aval des exports
+### OQ-14 — Outputs contractuels et usages aval
 
 - **ID** : OQ-14
 - **CRITICITÉ** : IMPORTANT
-- **QUESTION** : Quel est le rôle contractuel de chaque export global, régime
-  21, régime 29 et ventilation dans les traitements aval ?
-- **SOURCE** : `AS_IS.md:658-659` ; `BUSINESS_LOGIC_AS_IS.md:683-684` ;
-  `launch_expedition.R:89-151` ; `Controles_imput_PC_yb.R:44-146`.
+- **QUESTION** : Quels outputs de `main.R` sont contractuels pour les
+  utilisateurs et les traitements aval ?
+- **SOURCE** : `programs/Controles_imput_PC_yb.R:44-146` ;
+  `programs/launch_cniv.R:36-81` ; ancienne question `AS_IS.md:658-659`.
 - **ÉTAT** : PARTIELLEMENT RÉSOLU
-- **INVESTIGATION STATIQUE** : les contrôles PC consomment les exports CSV
-  trouvés dans `output_PC`. Le code établit les producteurs, mais ne définit
-  pas le statut métier de chaque fichier ni les consommateurs externes.
-- **RÉPONSE OU QUESTION HUMAINE EXACTE** : « Quels fichiers d'output sont
-  contractuels pour les utilisateurs et quels fichiers sont seulement des
-  artefacts intermédiaires ou de contrôle ? »
+- **INVESTIGATION STATIQUE** : les producteurs et certains consommateurs
+  internes sont identifiés. Le dépôt ne définit pas le statut officiel de
+  chaque CSV, RDS et XLSX ni les consommateurs externes.
+- **RÉPONSE OU QUESTION HUMAINE EXACTE** : « Quels fichiers produits par
+  `main.R` sont obligatoires pour l'acceptation de la production, et lesquels
+  sont uniquement intermédiaires ou de contrôle ? »
 - **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : les sorties obligatoires ne sont pas
   toutes identifiées.
 - **IMPACT — TESTS DE CARACTÉRISATION** : les assertions de non-régression ne
   peuvent pas hiérarchiser les fichiers.
-- **IMPACT — ARCHITECTURE TO-BE** : les interfaces de sortie restent
-  ambiguës.
-- **IMPACT — PLAN DE MIGRATION** : risque de supprimer ou renommer un fichier
-  consommé hors dépôt.
+- **IMPACT — ARCHITECTURE TO-BE** : les interfaces de sortie restent ouvertes.
+- **IMPACT — PLAN DE MIGRATION** : risque de supprimer une sortie consommée
+  hors dépôt.
 
 ### OQ-15 — Cas limites des ratios de ventilation
 
@@ -391,205 +310,287 @@ constituent pas des propositions To-be.
 - **CRITICITÉ** : IMPORTANT
 - **QUESTION** : Quel comportement est attendu lorsqu'aucune structure
   historique ou aucun ratio valide n'est disponible ?
-- **SOURCE** : `BUSINESS_LOGIC_AS_IS.md:588-591` ; `NR.R:1029-1075`.
-- **ÉTAT** : RÉSOLU STATIQUEMENT pour l'absence de fallback ; À POSER À UN
-  HUMAIN pour le comportement attendu
-- **INVESTIGATION STATIQUE** : `ratio = endo / sum_endo` est calculé sans
-  garde explicite. La jointure sur `period_last` ne comporte pas de branche de
-  secours. Le code ne définit donc ni redistribution, ni erreur métier, ni
-  exclusion explicite de ces lignes.
-- **RÉPONSE OU QUESTION HUMAINE EXACTE** : « Lorsqu'un ratio est indéfini,
-  qu'une période précédente manque ou qu'une clé historique n'existe pas,
-  faut-il produire une valeur manquante, exclure la ligne, redistribuer le
-  total ou arrêter le traitement ? »
-- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : les règles de ventilation des cas
-  limites restent incomplètes.
-- **IMPACT — TESTS DE CARACTÉRISATION** : il manque des valeurs attendues pour
-  les cas zéro, vide et première période.
-- **IMPACT — ARCHITECTURE TO-BE** : les garanties de sortie ne peuvent pas
-  être déduites.
-- **IMPACT — PLAN DE MIGRATION** : un traitement explicite ultérieur pourrait
-  changer les totaux sans qu'il soit possible de distinguer correction et
-  régression.
+- **SOURCE** : `programs/NR.R:1029-1075` ; `BUSINESS_LOGIC_AS_IS.md:588-591`.
+- **ÉTAT** : PARTIELLEMENT RÉSOLU
+- **INVESTIGATION STATIQUE** : `ratio = endo / sum_endo` est calculé sans garde,
+  et la jointure sur `period_last` n'a aucun fallback explicite. Le code
+  établit l'absence de traitement dédié, mais pas le comportement métier voulu.
+- **RÉPONSE OU QUESTION HUMAINE EXACTE** : « En cas de ratio indéfini, de
+  période précédente absente ou de clé historique manquante, faut-il produire
+  une valeur manquante, exclure la ligne, redistribuer le total ou arrêter le
+  traitement ? »
+- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : les règles des cas limites restent
+  incomplètes.
+- **IMPACT — TESTS DE CARACTÉRISATION** : les valeurs attendues des cas zéro,
+  vide et première période ne sont pas fixées.
+- **IMPACT — ARCHITECTURE TO-BE** : les garanties de sortie sont indéterminées.
+- **IMPACT — PLAN DE MIGRATION** : un traitement explicite pourrait changer les
+  totaux sans oracle permettant de distinguer correction et régression.
 
-### OQ-16 — Artéfacts : contrats ou caches
+### OQ-16 — Contrat des artefacts actifs
 
 - **ID** : OQ-16
 - **CRITICITÉ** : BLOCKER
-- **QUESTION** : Les artefacts RDS/Arrow/Parquet sont-ils des contrats
-  persistants ou des caches supprimables ?
-- **SOURCE** : `AS_IS.md:658-659` ; `BUSINESS_LOGIC_AS_IS.md:724-735` ;
-  `main.R:20-138` ; `NR.R:953-974,1149-1167`.
+- **QUESTION** : Quels artefacts lus par `main.R` sont des contrats persistants
+  et lesquels sont des caches recalculables ?
+- **SOURCE** : `main.R:57-138` ; `programs/NR.R:953-974,1149-1167` ;
+  ancienne question `AS_IS.md:658-659`.
 - **ÉTAT** : PARTIELLEMENT RÉSOLU
-- **INVESTIGATION STATIQUE** : certains artefacts servent clairement de
-  reprise (`*_imput.rds`, `*_ventil.rds`) et d'autres d'interface entre étapes
-  (`ETL/*.arrow`, `pipeline/*`). Le code ne déclare pas formellement leur
-  statut, durée de vie ou conservation réglementaire.
-- **RÉPONSE OU QUESTION HUMAINE EXACTE** : « Quels artefacts doivent être
-  conservés et versionnés comme interfaces ou historiques, et lesquels peuvent
-  être supprimés puis recalculés ? »
-- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : la persistance fait partie ou non du
-  comportement attendu selon une information absente.
+- **INVESTIGATION STATIQUE** : les artefacts ETL/pipeline sont lus directement
+  par `main.R`; les RDS d'estimation, ventilation, historique, Gazelec et MSD
+  pilotent des reprises. Aucun contrat de conservation ou de version n'est
+  déclaré.
+- **RÉPONSE OU QUESTION HUMAINE EXACTE** : « Quels artefacts ETL, pipeline et
+  RDS doivent être conservés comme interfaces ou historiques, et lesquels
+  peuvent être supprimés puis recalculés ? »
+- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : la persistance peut faire partie du
+  comportement de référence.
 - **IMPACT — TESTS DE CARACTÉRISATION** : il faut savoir si les tests portent
-  sur les artefacts eux-mêmes ou seulement sur les outputs finaux.
-- **IMPACT — ARCHITECTURE TO-BE** : les frontières entre données persistantes,
-  cache et contrat restent indéterminées.
-- **IMPACT — PLAN DE MIGRATION** : risque de perte d'historique ou de rupture
-  de reprise lors du remplacement des formats.
+  sur les artefacts intermédiaires ou seulement sur les outputs finaux.
+- **IMPACT — ARCHITECTURE TO-BE** : les frontières entre cache et interface ne
+  sont pas définies.
+- **IMPACT — PLAN DE MIGRATION** : risque de perdre une capacité de reprise ou
+  un historique requis.
 
-### OQ-17 — Contrôle d'intégrité des dossiers ETL/pipeline
+### OQ-17 — Intégrité des dossiers ETL et pipeline
 
 - **ID** : OQ-17
 - **CRITICITÉ** : IMPORTANT
-- **QUESTION** : Existe-t-il un contrôle d'intégrité externe ou une procédure
-  de nettoyage/reconstruction complète des dossiers ETL et pipeline ?
-- **SOURCE** : `AS_IS.md:647-648` ; `main.R:20-26,88-94` ;
-  `Refactoring/import et prep.R:1-43` ; `Refactoring/prep pipeline.R:1-89`.
-- **ÉTAT** : RÉSOLU STATIQUEMENT pour le dépôt ; À POSER À UN HUMAIN pour
-  l'exploitation
-- **INVESTIGATION STATIQUE** : le dépôt teste uniquement `dir.exists()`, sans
-  contrôler la présence ou la cohérence de chaque fichier attendu. Aucun
-  nettoyage ou reconstru​​ction complète n'est codé.
-- **RÉPONSE OU QUESTION HUMAINE EXACTE** : « Quelle procédure est utilisée
-  lorsqu'un dossier ETL ou pipeline existe mais est incomplet ou corrompu ? »
-- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : les conditions de reprise et de
-  recalcul ne sont pas entièrement documentées.
+- **QUESTION** : Quelle procédure s'applique lorsqu'un dossier ETL ou pipeline
+  existe mais est incomplet ou corrompu ?
+- **SOURCE** : `main.R:20-26,88-94` ; `Refactoring/import et prep.R:1-43` ;
+  `Refactoring/prep pipeline.R:1-89` ; ancienne question `AS_IS.md:647-648`.
+- **ÉTAT** : RÉSOLU STATIQUEMENT pour le dépôt, ouvert opérationnellement
+- **INVESTIGATION STATIQUE** : le code teste seulement l'existence du dossier,
+  pas la présence ou la cohérence de chaque artefact attendu. Aucun nettoyage
+  ou rebuild complet n'est codé.
+- **RÉPONSE OU QUESTION HUMAINE EXACTE** : « Quelle procédure de nettoyage ou
+  reconstruction complète est utilisée lorsqu'un dossier ETL ou pipeline est
+  partiel ou corrompu ? »
+- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : les conditions de reprise restent
+  incomplètes.
 - **IMPACT — TESTS DE CARACTÉRISATION** : les scénarios de dossiers partiels
-  restent sans oracle métier.
-- **IMPACT — ARCHITECTURE TO-BE** : les exigences d'atomicité et d'intégrité
-  des étapes ne sont pas établies.
-- **IMPACT — PLAN DE MIGRATION** : un changement de format peut laisser des
-  dossiers mixtes non détectés.
+  n'ont pas d'oracle métier.
+- **IMPACT — ARCHITECTURE TO-BE** : les exigences d'intégrité des étapes ne
+  sont pas établies.
+- **IMPACT — PLAN DE MIGRATION** : risque de produire des dossiers mixtes
+  indétectables après changement de format.
 
-### OQ-18 — Branches historiques et versions de R/packages
+### OQ-18 — Versions R et packages du chemin actif
 
 - **ID** : OQ-18
 - **CRITICITÉ** : IMPORTANT
-- **QUESTION** : Quelles versions de R et des packages sont nécessaires pour
-  reproduire le processus validé ?
-- **SOURCE** : `AS_IS.md:673-674` ; `programs/NR.R:1-9` ; absence de
-  `DESCRIPTION`, `renv.lock`, `packrat.lock` et manifeste équivalent.
-- **ÉTAT** : PARTIELLEMENT RÉSOLU
-- **INVESTIGATION STATIQUE** : les packages demandés sont visibles, mais aucune
-  version n'est fixée. La compatibilité effective des branches historiques,
-  de `RJDemetra`, `xlsx`, `arrow` et des APIs tidyverse n'est pas établie.
-- **RÉPONSE OU QUESTION HUMAINE EXACTE** : « Quelles versions de R, Java et
-  des packages sont validées pour la production et les relances historiques ? »
-- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : des comportements observés peuvent
-  dépendre de versions non documentées.
-- **IMPACT — TESTS DE CARACTÉRISATION** : les tests pourraient être
-  non-reproductibles entre environnements.
-- **IMPACT — ARCHITECTURE TO-BE** : les contraintes de compatibilité restent
-  ouvertes.
-- **IMPACT — PLAN DE MIGRATION** : impossible d'attribuer avec certitude un
-  écart à la migration ou à une variation de runtime.
+- **QUESTION** : Quelles versions de R, Java et des packages sont validées
+  pour reproduire le chemin `main.R` ?
+- **SOURCE** : `programs/NR.R:1-9` ; `programs/CNIV.R:1-5` ;
+  `programs/Controles_imput_PC_yb.R:1-5` ; absence de manifeste local.
+- **ÉTAT** : À POSER À UN HUMAIN
+- **INVESTIGATION STATIQUE** : les packages actifs sont identifiables, mais
+  aucune version R/package/Java n'est fixée. Les scripts historiques hors
+  baseline ne sont plus pertinents pour cette question de compatibilité.
+- **RÉPONSE OU QUESTION HUMAINE EXACTE** : « Quelles versions de R, Java et des
+  packages sont validées pour le chemin officiel `main.R` ? »
+- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : un comportement observé peut dépendre
+  d'une version non documentée.
+- **IMPACT — TESTS DE CARACTÉRISATION** : la reproductibilité des tests reste
+  incertaine.
+- **IMPACT — ARCHITECTURE TO-BE** : les contraintes de compatibilité runtime
+  restent ouvertes.
+- **IMPACT — PLAN DE MIGRATION** : un écart peut provenir du runtime plutôt que
+  du refactoring.
 
-### OQ-19 — Branches historiques effectivement exécutées
-
-- **ID** : OQ-19
-- **CRITICITÉ** : SECONDARY
-- **QUESTION** : Les branches historiques sont-elles encore exécutées, et avec
-  quelles versions de R/packages ?
-- **SOURCE** : `AS_IS.md:673-674` ; `programs/old/*`,
-  `CNIV_zero_mois.R`, `Controles_imput_C.R`.
-- **ÉTAT** : PARTIELLEMENT RÉSOLU
-- **INVESTIGATION STATIQUE** : aucune atteinte depuis `main.R` n'est observée,
-  mais l'absence d'appel interne ne prouve pas l'absence d'usage manuel ou
-  externe.
-- **RÉPONSE OU QUESTION HUMAINE EXACTE** : « Quelles branches historiques
-  sont encore exécutées, par qui, dans quel environnement et pour quelles
-  sorties ? »
-- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : des comportements de compatibilité
-  pourraient manquer au référentiel.
-- **IMPACT — TESTS DE CARACTÉRISATION** : des scénarios de relance pourraient
-  être omis.
-- **IMPACT — ARCHITECTURE TO-BE** : le périmètre de support reste trop large
-  ou trop étroit.
-- **IMPACT — PLAN DE MIGRATION** : risque de casser une procédure non
-  référencée dans le dépôt.
-
-### OQ-20 — Volumes et conditions d'exploitation
+### OQ-20 — Volumes et contraintes de charge
 
 - **ID** : OQ-20
 - **CRITICITÉ** : SECONDARY
-- **QUESTION** : Quels volumes de données, durées et contraintes mémoire sont
-  attendus en production ?
-- **SOURCE** : `AS_IS.md:687-689` ; `main.R:14-15` ;
-  `programs/NR.R:340-395,479-603`.
+- **QUESTION** : Quels volumes, durées, mémoire et niveau de parallélisme sont
+  attendus pour une production `main.R` ?
+- **SOURCE** : `main.R:14-15` ; `programs/NR.R:340-395,479-603` ; ancienne
+  question `AS_IS.md:687-689`.
 - **ÉTAT** : À POSER À UN HUMAIN
-- **INVESTIGATION STATIQUE** : le code fixe des nombres de processus et appelle
-  `memory.limit`, mais ne contient aucune mesure de volume, SLA ou capacité
-  machine. Les tailles des données externes sont absentes.
+- **INVESTIGATION STATIQUE** : le code fixe des paramètres de parallélisme et
+  appelle `memory.limit`, mais aucun volume cible, SLA ou capacité machine
+  n'est documenté.
 - **RÉPONSE OU QUESTION HUMAINE EXACTE** : « Quels sont les volumes usuels et
-  maximaux, la durée cible, la mémoire disponible et le niveau de parallélisme
-  validé pour une production mensuelle ? »
-- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : les contraintes non fonctionnelles ne
-  sont pas documentées.
+  maximaux, la durée cible, la mémoire disponible et le parallélisme validé
+  pour la production `main.R` ? »
+- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : aucun impact direct sur les règles de
+  calcul ; les contraintes non fonctionnelles manquent.
 - **IMPACT — TESTS DE CARACTÉRISATION** : impossible de définir les jeux de
-  charge et les seuils de performance.
-- **IMPACT — ARCHITECTURE TO-BE** : les besoins de calcul et de stockage ne
-  peuvent pas être déduits.
-- **IMPACT — PLAN DE MIGRATION** : une migration peut être fonctionnellement
-  correcte mais inexploitable à volume réel.
+  charge et seuils de performance.
+- **IMPACT — ARCHITECTURE TO-BE** : les besoins de calcul et stockage restent
+  indéterminés.
+- **IMPACT — PLAN DE MIGRATION** : une migration fonctionnellement correcte
+  peut rester inexploitable à volume réel.
 
-### OQ-21 — Usage aval et validation des sorties CNIV/contrôles
+### OQ-21 — Validation aval des contrôles et sorties CNIV
 
 - **ID** : OQ-21
 - **CRITICITÉ** : IMPORTANT
-- **QUESTION** : Quels contrôles et fichiers CNIV sont officiellement validés
-  et consommés en aval ?
-- **SOURCE** : `AS_IS.md:658-659,687-689` ; `programs/Controles_imput_PC_yb.R:149-618` ;
-  `programs/launch_cniv.R:36-81`.
+- **QUESTION** : Quels contrôles et fichiers CNIV constituent la validation
+  officielle de la production `main.R` ?
+- **SOURCE** : `programs/Controles_imput_PC_yb.R:149-618` ;
+  `programs/launch_cniv.R:36-81` ; ancienne question `AS_IS.md:658-659`.
 - **ÉTAT** : PARTIELLEMENT RÉSOLU
-- **INVESTIGATION STATIQUE** : les producteurs et plusieurs lectures sont
-  visibles. Les consommateurs humains ou systèmes externes, ainsi que les
-  critères de validation des XLSX et contrôles, ne sont pas dans le dépôt.
+- **INVESTIGATION STATIQUE** : les contrôles et producteurs CNIV sont dans le
+  chemin actif. Les consommateurs humains ou systèmes externes et leurs
+  critères d'acceptation ne sont pas dans le dépôt.
 - **RÉPONSE OU QUESTION HUMAINE EXACTE** : « Quels contrôles et fichiers CNIV
-  constituent la validation officielle de la production, et quels systèmes ou
-  utilisateurs les consomment ? »
-- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : la définition d'une production
-  réussie reste incomplète.
+  sont nécessaires pour déclarer la production `main.R` validée, et qui les
+  consomme ? »
+- **IMPACT — RÉFÉRENTIEL FONCTIONNEL** : la définition d'une production réussie
+  reste incomplète.
 - **IMPACT — TESTS DE CARACTÉRISATION** : les tests ne savent pas quels
   contrôles et classeurs doivent être comparés.
-- **IMPACT — ARCHITECTURE TO-BE** : les interfaces aval ne sont pas définies.
-- **IMPACT — PLAN DE MIGRATION** : un export apparemment secondaire peut être
+- **IMPACT — ARCHITECTURE TO-BE** : les interfaces aval restent ouvertes.
+- **IMPACT — PLAN DE MIGRATION** : un output secondaire en apparence peut être
   indispensable à l'acceptation métier.
 
-## 4. Éléments résolus statiquement sans question humaine supplémentaire
+## 4. Questions fermées par la décision de baseline
 
-Les points suivants des rapports sont fermés au niveau du dépôt, même si leur
-impact opérationnel peut nécessiter une validation ultérieure :
+### OQ-04 — Scripts hors `main.R`
 
-| Sujet | Réponse statique | Référence |
-|---|---|---|
-| Fonction S4 appelée par `launch_cniv` | `import_confederation_table` et `data_treatment` sont appelées | `programs/launch_cniv.R:9-22` |
-| Fonction S4 appelée par le chemin historique NR | `import_historical_simulation`, `import_sample`, `import_gazelec` sont appelées dans `NR.R` | `programs/NR.R:1202-1218,1272-1274` |
-| Préparations Refactoring | `import_ca3`, `import_endogenous`, `import_ER`, `import_detail` sont appelées par `prep pipeline.R` | `Refactoring/prep pipeline.R:5-87` |
-| Invalidation codée | aucune invalidation par date, hash, paramètre ou mtime observée | `main.R:20-26,88-94`, `NR.R:956-974` |
-| Atteignabilité depuis `main.R` | les scripts commentés/non sourcés ne sont pas atteignables dans le chemin principal statique | `main.R:144-169` |
-| Ventilation directe 29 | aucun appel direct à `launch_all_distributions` avec `expedition_29` | `launch_expedition.R:50-55` |
-| Cas limites des ratios | aucun fallback explicite dans `distribution()` | `NR.R:1029-1075` |
-| Versionnement local | aucun manifeste de versions détecté | arborescence du dépôt |
+**Statut : FERMÉ POUR LA COMPATIBILITÉ.** `launch_production.R`,
+`launch_request.R`, `imputations_NATR.R`, `imputations_transport48Kv2.R`,
+`prgm_C3290.R`, `programs/old/*`, `Controles_imput_C.R` et
+`CNIV_zero_mois.R` ne sont pas atteignables depuis le chemin actif de
+`main.R`. Leur usage externe éventuel ne modifie pas le référentiel de
+compatibilité.
 
-## 5. Limites résiduelles
+### OQ-08 — Statut des scripts anciens
 
-Les points suivants ne peuvent pas être résolus par une lecture supplémentaire
-des mêmes fichiers :
+**Statut : FERMÉ POUR LA COMPATIBILITÉ.** Leur support éventuel est une
+question de maintenance ou d'exploitation séparée, pas une inconnue bloquant
+la migration de `main.R`.
 
-- usage réel hors dépôt ;
-- décisions métier non exprimées dans les scripts ;
-- producteurs et validateurs externes des inputs ;
-- disponibilité et statut des accès réseau ou PostgreSQL ;
-- historique des versions de runtime et des données ;
-- attentes humaines sur les cas limites de ventilation ;
-- contrats aval des outputs.
+### OQ-09 — Producteur PostgreSQL
 
-Une réponse humaine est nécessaire avant de figer le référentiel fonctionnel,
-les tests de caractérisation ou tout plan de migration sur ces sujets.
+**Statut : FERMÉ POUR LA COMPATIBILITÉ.** `launch_request.R` n'est pas dans le
+chemin baseline. La provenance des fichiers réellement présents dans `input/`
+reste couverte par `OQ-11`.
+
+### OQ-10 — Identifiants PostgreSQL
+
+**Statut : FERMÉ POUR LA COMPATIBILITÉ, SIGNALÉ HORS PÉRIMÈTRE.** La présence
+de secrets en clair reste un sujet de sécurité à traiter séparément, sans
+constituer un blocker fonctionnel de la migration `main.R`.
+
+### OQ-19 — Branches historiques
+
+**Statut : FERMÉ POUR LA COMPATIBILITÉ.** Les branches non atteignables ne
+doivent pas recevoir de tests de non-régression baseline, sauf dépendance
+active découverte ultérieurement.
+
+## 5. `REMAINING_DECISIONS_BEFORE_TO_BE`
+
+Cette section contient uniquement les décisions humaines encore nécessaires
+avant de définir le To-be. Elle ne propose aucune architecture.
+
+### Décision 1 — Validité des caches actifs
+
+- **QUESTION** : Quelle règle détermine qu'un cache ETL, pipeline ou RDS est
+  valide avant réutilisation ?
+- **POURQUOI ELLE BLOQUE OU NON** : **BLOQUE** la caractérisation si un cache
+  obsolète peut modifier les résultats de référence ; ne bloque pas la lecture
+  du chemin nominal lorsque les artefacts sont déjà connus comme valides.
+- **COMPORTEMENT ACTUEL ÉTABLI** : `main.R` utilise `dir.exists()` pour ETL et
+  pipeline ; les fonctions NR utilisent `file.exists()` pour relire les RDS,
+  sans validation de contenu ou de paramètres.
+- **DÉCISION HUMAINE NÉCESSAIRE** : confirmer la procédure de validation,
+  d'invalidation et de reconstruction des caches.
+
+### Décision 2 — Contrat des artefacts persistants
+
+- **QUESTION** : Quels artefacts ETL, pipeline et RDS sont des interfaces ou
+  historiques à conserver, et lesquels sont recalculables ?
+- **POURQUOI ELLE BLOQUE OU NON** : **BLOQUE** la migration si la suppression
+  ou la transformation d'un artefact rompt une reprise ou un consommateur.
+- **COMPORTEMENT ACTUEL ÉTABLI** : `main.R` lit les Arrow/Parquet préparés ;
+  `NR.R` relit les RDS d'estimation, ventilation, historique, Gazelec et MSD.
+- **DÉCISION HUMAINE NÉCESSAIRE** : classer chaque artefact actif comme
+  contrat, historique, cache ou sortie livrable.
+
+### Décision 3 — Ventilation du régime 29
+
+- **QUESTION** : Comment les prédictions expédition du régime 29 doivent-elles
+  être ventilées ?
+- **POURQUOI ELLE BLOQUE OU NON** : **BLOQUE** la caractérisation des sorties
+  expédition et le choix entre reproduction et changement de comportement.
+- **COMPORTEMENT ACTUEL ÉTABLI** : les régimes 21 et 29 sont estimés puis
+  additionnés ; la ventilation active est appelée avec `expedition_21` et
+  `vart_21`.
+- **DÉCISION HUMAINE NÉCESSAIRE** : confirmer ventilation directe 29, usage de
+  la structure 21 ou absence de ventilation 29.
+
+### Décision 4 — Cas limites des ratios
+
+- **QUESTION** : Que faire lorsqu'un ratio est indéfini ou qu'une structure
+  historique manque ?
+- **POURQUOI ELLE BLOQUE OU NON** : **IMPORTANT**, car les cas limites doivent
+  recevoir une valeur attendue dans les tests ; non blocker pour les données
+  nominales qui disposent d'une structure valide.
+- **COMPORTEMENT ACTUEL ÉTABLI** : `distribution()` calcule `endo / sum_endo`
+  et joint sur `period_last`, sans fallback explicite.
+- **DÉCISION HUMAINE NÉCESSAIRE** : confirmer sortie manquante, exclusion,
+  redistribution ou arrêt du traitement.
+
+### Décision 5 — Outputs contractuels
+
+- **QUESTION** : Quels CSV, RDS, XLSX et contrôles produits par `main.R` sont
+  obligatoires pour accepter une production ?
+- **POURQUOI ELLE BLOQUE OU NON** : **IMPORTANT**, car la migration doit
+  préserver les interfaces aval ; non blocker pour le calcul interne.
+- **COMPORTEMENT ACTUEL ÉTABLI** : les contrôles PC relisent les CSV de
+  `output_PC`; CNIV écrit des CSV/XLSX locaux et réseau.
+- **DÉCISION HUMAINE NÉCESSAIRE** : établir la liste des outputs livrables et
+  des validations faisant foi.
+
+### Décision 6 — Inputs et environnement officiellement supportés
+
+- **QUESTION** : Quelle provenance d'inputs et quel environnement réseau/local
+  sont officiellement requis par `main.R` ?
+- **POURQUOI ELLE BLOQUE OU NON** : **IMPORTANT** pour la reproductibilité et
+  les tests d'intégration ; non blocker pour la lecture statique du code.
+- **COMPORTEMENT ACTUEL ÉTABLI** : `config.R` fixe les noms, périodes et
+  chemins d'inputs, historiques, CA3, SIRENE, Polyco et CNIV.
+- **DÉCISION HUMAINE NÉCESSAIRE** : confirmer la procédure de production,
+  validation et versionnement des inputs ainsi que l'environnement supporté.
+
+### Décision 7 — Runtime validé
+
+- **QUESTION** : Quelles versions de R, Java et packages sont validées pour
+  exécuter `main.R` ?
+- **POURQUOI ELLE BLOQUE OU NON** : **IMPORTANT** pour reproduire les résultats
+  et isoler les écarts de migration ; non blocker pour le modèle conceptuel.
+- **COMPORTEMENT ACTUEL ÉTABLI** : les packages actifs sont chargés par les
+  scripts, mais aucune version n'est fixée dans le dépôt.
+- **DÉCISION HUMAINE NÉCESSAIRE** : fournir l'environnement validé de la
+  baseline.
+
+### Décision 8 — Relances partielles
+
+- **QUESTION** : Quelles relances partielles sont officiellement supportées ?
+- **POURQUOI ELLE BLOQUE OU NON** : **NON BLOCKER** pour la baseline complète ;
+  important pour l'exploitation et la reprise après incident.
+- **COMPORTEMENT ACTUEL ÉTABLI** : l'ordre complet de `main.R` est séquentiel,
+  mais aucune procédure de relance partielle n'est codée.
+- **DÉCISION HUMAINE NÉCESSAIRE** : confirmer les étapes relançables et les
+  artefacts réutilisables.
+
+### Décision 9 — Contraintes de charge
+
+- **QUESTION** : Quels volumes et seuils de performance la production doit-elle
+  supporter ?
+- **POURQUOI ELLE BLOQUE OU NON** : **NON BLOCKER** pour la caractérisation
+  fonctionnelle ; secondaire pour la migration opérationnelle.
+- **COMPORTEMENT ACTUEL ÉTABLI** : `main.R` appelle `memory.limit()` et les
+  méthodes NR utilisent du parallélisme, sans volume cible documenté.
+- **DÉCISION HUMAINE NÉCESSAIRE** : fournir volumes, durée cible, mémoire et
+  parallélisme validés.
 
 ## Conclusion
 
-La structure et plusieurs comportements du code sont désormais résolus
-statiquement. Les inconnues bloquantes restantes concernent principalement
-l'exploitation réelle et l'intention métier de la ventilation expédition,
-notamment pour le régime 29. Aucune proposition To-be n'est incluse.
+Après la décision de baseline, les inconnues relatives aux scripts non
+atteignables ne bloquent plus la migration. Les blockers restants concernent
+uniquement les caches actifs, les artefacts lus par `main.R` et la règle métier
+de ventilation expédition 21/29. Aucune proposition To-be n'est incluse.
